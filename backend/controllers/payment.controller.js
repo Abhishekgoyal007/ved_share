@@ -1,6 +1,7 @@
 import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
 import { stripe } from "../lib/stripe.js";
+import Product from "../models/product.model.js";
 
 export const createCheckoutSession = async (req, res) => {
 	try {
@@ -93,16 +94,29 @@ export const checkoutSuccess = async (req, res) => {
 
 			// create a new Order
 			const products = JSON.parse(session.metadata.products);
-			const newOrder = new Order({
-				user: session.metadata.userId,
-				products: products.map((product) => ({
-					product: product.id,
-					quantity: product.quantity,
-					price: product.price,
-				})),
-				totalAmount: session.amount_total / 100, // convert from cents to dollars,
-				stripeSessionId: sessionId,
-			});
+			const detailedProducts = await Promise.all(
+  products.map(async (item) => {
+    const productDoc = await Product.findById(item.id);
+
+    if (!productDoc) {
+      throw new Error(`Product not found: ${item.id}`);
+    }
+
+    return {
+      product: productDoc._id,
+      userId: productDoc.userId, // ✅ add seller info
+      quantity: item.quantity,
+      price: item.price,
+    };
+  })
+);
+
+const newOrder = new Order({
+  user: session.metadata.userId, // buyer
+  products: detailedProducts,
+  totalAmount: session.amount_total / 100,
+  stripeSessionId: sessionId,
+});
 
 			await newOrder.save();
 

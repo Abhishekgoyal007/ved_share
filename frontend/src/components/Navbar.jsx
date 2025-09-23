@@ -1,4 +1,4 @@
-import { ShoppingCart, UserPlus, LogIn, LogOut, Lock } from "lucide-react";
+import { ShoppingCart, UserPlus, LogIn, LogOut, LayoutDashboard, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
@@ -31,6 +31,13 @@ const Navbar = () => {
 						>
 							Home
 						</Link>
+						<Link
+							to={"/about"}
+							className='text-gray-300 hover:text-cyan-400 transition duration-300
+					 ease-in-out'
+						>
+							About Us
+						</Link>
 						{user && (
 							<Link
 								to={"/cart"}
@@ -49,16 +56,27 @@ const Navbar = () => {
 								)}
 							</Link>
 						)}
-						{isAdmin && (
+						{user && (
 							<Link
 								className='bg-cyan-700 hover:bg-cyan-600 text-white px-3 py-1 rounded-md font-medium
 								 transition duration-300 ease-in-out flex items-center'
-								to={"/secret-dashboard"}
+								to={"/dashboard"}
 							>
-								<Lock className='inline-block mr-1' size={18} />
+								<LayoutDashboard className='inline-block mr-1' size={18} />
 								<span className='hidden sm:inline'>Dashboard</span>
 							</Link>
 						)}
+
+						{user && (
+						<Link
+							className='bg-cyan-700 hover:bg-cyan-600 text-white px-3 py-1 rounded-md font-medium
+								 transition duration-300 ease-in-out flex items-center'
+							to={"/learning-desk"}
+						>
+							<BookOpen className="inline-block mr-1" size={18} />
+							<span className="hidden sm:inline">Learning Desk</span>
+						</Link>
+					)}
 
 						{user ? (
 							<button

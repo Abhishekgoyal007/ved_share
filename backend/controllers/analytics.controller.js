@@ -84,3 +84,52 @@ function getDatesInRange(startDate, endDate) {
 
 	return dates;
 }
+
+export const getUserAnalyticsData = async (userId) => {
+  const totalProducts = await Product.countDocuments({ userId });
+
+  const salesStats = await Order.aggregate([
+    { $unwind: "$products" },
+    { $match: { "products.userId": userId } },
+    {
+      $group: {
+        _id: null,
+        totalSales: { $sum: "$products.quantity" },
+        totalRevenue: { $sum: { $multiply: ["$products.quantity", "$products.price"] } },
+      },
+    },
+  ]);
+
+  const { totalSales = 0, totalRevenue = 0 } = salesStats[0] || {};
+
+  return { totalProducts, totalSales, totalRevenue };
+};
+
+export const getUserDailySalesData = async (userId, startDate, endDate) => {
+	const dailySalesData = await Order.aggregate([
+		{ $unwind: "$products" },
+		{ $match: { 
+			"products.userId": userId,
+			createdAt: { $gte: startDate, $lte: endDate }
+		}},
+		{
+			$group: {
+				_id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+				sales: { $sum: "$products.quantity" },
+				revenue: { $sum: { $multiply: ["$products.price", "$products.quantity"] } },
+			},
+		},
+		{ $sort: { _id: 1 } }
+	]);
+
+	const dateArray = getDatesInRange(startDate, endDate);
+
+	return dateArray.map((date) => {
+		const foundData = dailySalesData.find((item) => item._id === date);
+		return {
+			date,
+			sales: foundData?.sales || 0,
+			revenue: foundData?.revenue || 0,
+		};
+	});
+};

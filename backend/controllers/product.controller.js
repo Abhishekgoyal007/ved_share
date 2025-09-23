@@ -12,6 +12,18 @@ export const getAllProducts = async (req, res) => {
 	}
 };
 
+export const getMyProducts = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const products = await Product.find({ userId });
+
+    res.json({ products });
+  } catch (error) {
+    console.error("Error fetching user products:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const getFeaturedProducts = async (req, res) => {
 	try {
 		let featuredProducts = await redis.get("featured_products");
@@ -55,6 +67,7 @@ export const createProduct = async (req, res) => {
 			price,
 			image: cloudinaryResponse?.secure_url ? cloudinaryResponse.secure_url : "",
 			category,
+			userId: req.user._id,
 		});
 
 		res.status(201).json(product);
@@ -72,13 +85,20 @@ export const deleteProduct = async (req, res) => {
 			return res.status(404).json({ message: "Product not found" });
 		}
 
+		const isAdmin = req.user.role === "admin";
+		const isOwner = product.userId.toString() === req.user._id.toString();
+
+		if (!isAdmin && !isOwner) {
+			return res.status(403).json({ message: "Access denied - You cannot delete this product" });
+		}
+
 		if (product.image) {
 			const publicId = product.image.split("/").pop().split(".")[0];
 			try {
 				await cloudinary.uploader.destroy(`products/${publicId}`);
-				console.log("deleted image from cloduinary");
+				console.log("deleted image from cloudinary");
 			} catch (error) {
-				console.log("error deleting image from cloduinary", error);
+				console.log("error deleting image from cloudinary", error);
 			}
 		}
 

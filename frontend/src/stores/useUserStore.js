@@ -25,6 +25,7 @@ export const useUserStore = create((set, get) => ({
       otpEmail: email,
       loading: false
     });
+			toast.success("Signup successful. Please verify your email.");
 			return { success: true };
 		} catch (error) {
 			set({ loading: false });
@@ -45,6 +46,7 @@ verifyOtp: async (otp) => {
       loading: false, 
       otpEmail: null,
     });
+		 toast.success("OTP verified successfully!");
     return true; // Return success status
   } catch (error) {
     set({ loading: false });
@@ -58,6 +60,7 @@ resendOtp: async () => {
   try {
     await axios.post('/auth/resend-otp', { email: get().otpEmail });
     set({ loading: false });
+		toast.success("OTP resent to your email");
   } catch (error) {
     set({ loading: false });
     toast.error(error.response?.data?.message || "An error occurred");
@@ -69,8 +72,8 @@ resendOtp: async () => {
 
 		try {
 			const res = await axios.post("/auth/login", { email, password });
-
 			set({ user: res.data, loading: false });
+			toast.success("Logged in successfully");
 		} catch (error) {
 			set({ loading: false });
 			toast.error(error.response.data.message || "An error occurred");
@@ -92,6 +95,7 @@ forgotPassword: async (email) => {
   try {
     await axios.post('/auth/forgot-password', { email });
     set({ loading: false });
+		toast.success("Password reset email sent!");
   } catch (error) {
     set({ loading: false });
     toast.error(error.response?.data?.message || "An error occurred");
@@ -106,9 +110,11 @@ resetPassword: async (token, newPassword) => {
       newPassword 
     });
     set({ loading: false });
+		toast.success("Password reset successful!");
     return res.data; 
   } catch (error) {
     set({ loading: false });
+		toast.error(error.response?.data?.message || "Reset failed");
     throw error.response?.data || error;
   }
 },
@@ -137,6 +143,7 @@ resetPassword: async (token, newPassword) => {
 			return response.data;
 		} catch (error) {
 			set({ user: null, checkingAuth: false });
+			toast.error("Session expired. Please login again.");
 			throw error;
 		}
 	},
