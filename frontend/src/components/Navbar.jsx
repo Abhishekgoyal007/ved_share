@@ -1,8 +1,8 @@
-import { ShoppingCart, UserPlus, LogIn, LogOut, LayoutDashboard, BookOpen } from "lucide-react";
+import { ShoppingCart, UserPlus, LogIn, LogOut, LayoutDashboard, BookOpen, FileSearch } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
-import vs_logo from "../../public/vs_logo.png"
+import vs_logo from "/vs_logo.png"
 const Navbar = () => {
 	const { user, logout } = useUserStore();
 	const isAdmin = user?.role === "admin";
@@ -75,6 +75,17 @@ const Navbar = () => {
 						>
 							<BookOpen className="inline-block mr-1" size={18} />
 							<span className="hidden sm:inline">Learning Desk</span>
+						</Link>
+					)}
+
+					{user && (
+						<Link
+							className='bg-purple-600 hover:bg-purple-500 text-white px-3 py-1 rounded-md font-medium
+								 transition duration-300 ease-in-out flex items-center'
+							to={"/keyword-extractor"}
+						>
+							<FileSearch className="inline-block mr-1" size={18} />
+							<span className="hidden sm:inline">Keyword Extractor</span>
 						</Link>
 					)}
 

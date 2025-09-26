@@ -20,6 +20,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import LearningDeskPage from "./pages/LearningDeskPage";
 import AboutPage from "./pages/AboutPage";
+import KeywordExtractorPage from "./pages/KeywordExtractorPage";
 import Footer from './components/Footer';
 
 function App() {
@@ -65,6 +66,10 @@ function App() {
 					<Route
 						path='/learning-desk'
 						element={user ? <LearningDeskPage /> : <Navigate to='/login' />}
+					/>
+					<Route
+						path='/keyword-extractor'
+						element={user ? <KeywordExtractorPage /> : <Navigate to='/login' />}
 					/>
 					<Route path='/category/:category' element={<CategoryPage />} />
 					<Route path='/cart' element={user ? <CartPage /> : <Navigate to='/login' />} />
