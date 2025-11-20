@@ -1,20 +1,28 @@
 import { useState } from "react";
-import { Clock, Calendar } from "lucide-react";
+import { Clock, Calendar, Briefcase, Sparkles } from "lucide-react";
 import SidebarLayout from "../components/SidebarLayout";
-import PomodoroTab from "../components/LearningDesk/PomodoroTab/PomodoroTab";
+import FocusSessionTab from "../components/LearningDesk/FocusSessionTab/FocusSessionTab";
+import InterviewPrepTab from "../components/LearningDesk/InterviewPrepTab/InterviewPrepTab";
+import KeywordExtractorTab from "../components/LearningDesk/KeywordExtractorTab/KeywordExtractorTab";
 
 const LearningDeskPage = () => {
-  const [activeTab, setActiveTab] = useState("pomodoro");
+  const [activeTab, setActiveTab] = useState("focus");
 
   const tabs = [
-    { id: "pomodoro", label: "Pomodoro Timer", icon: Clock },
+    { id: "focus", label: "Focus Sessions", icon: Clock },
+    { id: "interview", label: "Interview Prep", icon: Briefcase },
+    { id: "keywords", label: "Keyword Extractor", icon: Sparkles },
     { id: "calendar", label: "Study Calendar", icon: Calendar },
   ];
 
   const renderContent = () => {
     switch (activeTab) {
-      case "pomodoro":
-        return <PomodoroTab />;
+      case "focus":
+        return <FocusSessionTab />;
+      case "interview":
+        return <InterviewPrepTab />;
+      case "keywords":
+        return <KeywordExtractorTab />;
       case "calendar":
         return <div>Calendar Coming Soon...</div>;
       default:

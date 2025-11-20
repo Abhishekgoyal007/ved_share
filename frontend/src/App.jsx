@@ -21,6 +21,7 @@ import DashboardPage from "./pages/DashboardPage";
 import LearningDeskPage from "./pages/LearningDeskPage";
 import AboutPage from "./pages/AboutPage";
 import KeywordExtractorPage from "./pages/KeywordExtractorPage";
+import InterviewSharedPage from "./pages/InterviewSharedPage";
 import Footer from './components/Footer';
 
 function App() {
@@ -42,15 +43,15 @@ function App() {
 		<div className='min-h-screen bg-gray-900 text-white relative overflow-hidden'>
 			{/* Background gradient */}
 			<div className='absolute inset-0 overflow-hidden z-0'>
-  <div className='absolute inset-0'>
-    <div className='absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.3)_0%,rgba(10,80,60,0.2)_45%,rgba(0,0,0,0.1)_100%)]' />
-  </div>
-</div>
-			
+				<div className='absolute inset-0'>
+					<div className='absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.3)_0%,rgba(10,80,60,0.2)_45%,rgba(0,0,0,0.1)_100%)]' />
+				</div>
+			</div>
+
 
 			<div className='relative z-50 pt-20'>
 				<Navbar />
-				
+
 				<Routes>
 					<Route path='/' element={<HomePage />} />
 					<Route path='/about' element={<AboutPage />} />
@@ -71,6 +72,7 @@ function App() {
 						path='/keyword-extractor'
 						element={user ? <KeywordExtractorPage /> : <Navigate to='/login' />}
 					/>
+					<Route path='/interview/:id' element={<InterviewSharedPage />} />
 					<Route path='/category/:category' element={<CategoryPage />} />
 					<Route path='/cart' element={user ? <CartPage /> : <Navigate to='/login' />} />
 					<Route
@@ -80,11 +82,11 @@ function App() {
 					<Route path='/purchase-cancel' element={user ? <PurchaseCancelPage /> : <Navigate to='/login' />} />
 				</Routes>
 
-				 <Footer />
+				<Footer />
 			</div>
 			<Toaster />
-			
-		
+
+
 		</div>
 
 	);

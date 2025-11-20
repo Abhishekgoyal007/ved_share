@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import CategoryItem from "../components/CategoryItem";
 import { useProductStore } from "../stores/useProductStore";
 import { useUserStore } from "../stores/useUserStore";
@@ -26,78 +27,92 @@ const HomePage = () => {
 
 	return (
 		<div className="relative min-h-screen text-white overflow-hidden">
-
 			{/* Hero Section */}
-			<div className="relative bg-gradient-to-b from-gray-900 via-gray-950 to-black text-white min-h-screen flex items-center">
-				<div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between w-full">
-					
+			<div className="relative bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 text-white min-h-screen flex items-center">
+				{/* Subtle gradient overlay */}
+				<div className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 via-transparent to-blue-900/10" />
+
+				<div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between w-full py-20">
 					{/* Left side text */}
 					<div className="md:w-1/2 text-center md:text-left">
 						<motion.h1
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ duration: 0.8 }}
-							className="text-5xl sm:text-6xl font-bold text-cyan-400 drop-shadow-lg"
+							className="text-5xl sm:text-7xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent mb-6"
 						>
 							VedShare 📚
 						</motion.h1>
 
 						<motion.p
-	initial={{ opacity: 0, y: 20 }}
-	animate={{ opacity: 1, y: 0 }}
-	transition={{ duration: 1, delay: 0.2 }}
-	className="mt-6 text-xl text-gray-300"
->
-	{user ? (
-		<span className=  "text-3xl">
-			👋 Welcome back, <span className="text-cyan-400 font-semibold">{user.name}</span>!
-		</span>
-	) : (
-		<span>
-			Buy, Sell & Learn — all in one platform.
-			<br />
-		</span>
-	)}
-</motion.p>
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 1, delay: 0.2 }}
+							className="text-xl sm:text-2xl text-gray-300 mb-8"
+						>
+							{user ? (
+								<span className="text-2xl sm:text-3xl">
+									👋 Welcome back, <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent font-semibold">{user.name}</span>!
+								</span>
+							) : (
+								<span className="leading-relaxed">
+									Buy, Sell & Learn — all in one platform.
+									<br />
+									<span className="text-gray-400 text-lg">Join thousands of students sharing knowledge</span>
+								</span>
+							)}
+						</motion.p>
 
 						<motion.div
-	initial={{ opacity: 0, y: 20 }}
-	animate={{ opacity: 1, y: 0 }}
-	transition={{ duration: 1, delay: 0.4 }}
-	className="mt-10 flex justify-center md:justify-start gap-6"
->
-	{!user ? (
-		<>
-			<Link
-				to="/login"
-				className="px-6 py-3 rounded-2xl bg-cyan-500 text-black font-semibold hover:bg-cyan-400 transition"
-			>
-				Login
-			</Link>
-			<Link
-				to="/register"
-				className="px-6 py-3 rounded-2xl border border-cyan-500 text-cyan-400 font-semibold hover:bg-cyan-500 hover:text-black transition"
-			>
-				Register
-			</Link>
-		</>
-	) : (
-		<>
-			<Link
-				to="/dashboard"
-				className="px-6 py-3 rounded-2xl bg-cyan-400 text-black font-semibold hover:bg-cyan-300 transition"
-			>
-				Dashboard
-			</Link>
-			<Link
-				to="/learning-desk"
-				className="px-6 py-3 rounded-2xl border border-cyan-400 text-cyan-300 font-semibold hover:bg-cyan-400 hover:text-black transition"
-			>
-				Learning Desk
-			</Link>
-		</>
-	)}
-</motion.div>
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 1, delay: 0.4 }}
+							className="flex flex-wrap justify-center md:justify-start gap-4"
+						>
+							{!user ? (
+								<>
+									<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+										<Link
+											to="/signup"
+											className="px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold shadow-lg transition-all duration-200 flex items-center gap-2"
+										>
+											Get Started
+											<ArrowRight size={20} />
+										</Link>
+									</motion.div>
+									<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+										<Link
+											to="/login"
+											className="px-8 py-4 rounded-xl border-2 border-cyan-500/50 text-cyan-400 font-semibold hover:bg-cyan-500/10 hover:border-cyan-400 transition-all duration-200 flex items-center gap-2"
+										>
+											Login
+											<ArrowRight size={20} />
+										</Link>
+									</motion.div>
+								</>
+							) : (
+								<>
+									<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+										<Link
+											to="/dashboard"
+											className="px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold shadow-lg transition-all duration-200 flex items-center gap-2"
+										>
+											Dashboard
+											<ArrowRight size={20} />
+										</Link>
+									</motion.div>
+									<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+										<Link
+											to="/learning-desk"
+											className="px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-semibold shadow-lg transition-all duration-200 flex items-center gap-2"
+										>
+											Learning Desk
+											<ArrowRight size={20} />
+										</Link>
+									</motion.div>
+								</>
+							)}
+						</motion.div>
 					</div>
 
 					{/* Right side image */}
@@ -105,50 +120,72 @@ const HomePage = () => {
 						initial={{ opacity: 0, scale: 0.9 }}
 						animate={{ opacity: 1, scale: 1 }}
 						transition={{ duration: 1, delay: 0.3 }}
-						className="md:w-1/2 mt-10 md:mt-0 flex justify-center"
+						className="md:w-1/2 mt-16 md:mt-0 flex justify-center"
 					>
-						<img
-							src="/hero-image2.png"
-							alt="Books"
-							className="w-3/4 md:w-full rounded-2xl shadow-lg"
-						/>
+						<div className="relative">
+							<div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-3xl blur-2xl" />
+							<img
+								src="/hero-image2.png"
+								alt="Books"
+								className="relative w-full max-w-lg rounded-3xl shadow-2xl"
+							/>
+						</div>
 					</motion.div>
 				</div>
-
-				{/* Subtle animated background shapes */}
-				<motion.div
-	initial={{ opacity: 0 }}
-	animate={{ opacity: 0.6 }}
-	transition={{ duration: 2 }}
-	className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0"
->
-	{/* Cyan Blob */}
-	<div className="absolute w-[400px] h-[400px] bg-cyan-400 rounded-full mix-blend-screen filter blur-[120px] opacity-60 animate-pulse top-[-50px] left-[-50px]"></div>
-
-	{/* Blue Blob */}
-	<div className="absolute w-[500px] h-[500px] bg-blue-600 rounded-full mix-blend-screen filter blur-[160px] opacity-50 animate-pulse bottom-[-60px] right-[-60px]"></div>
-</motion.div>
 			</div>
 
 			{/* Categories Section */}
-			<div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-				<h1 className="text-center text-5xl sm:text-6xl font-bold text-cyan-400 mb-4">
-					Explore Our Categories
-				</h1>
-				<p className="text-center text-xl text-gray-300 mb-12">
-					Books Worth Sharing, Readers Worth Connecting!
-					<br /> Buy and Sell Books without any hassle
-				</p>
+			<div className="relative z-10 bg-gray-900 py-20">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+					<motion.div
+						initial={{ opacity: 0, y: 20 }}
+						whileInView={{ opacity: 1, y: 0 }}
+						viewport={{ once: true }}
+						transition={{ duration: 0.8 }}
+						className="text-center mb-16"
+					>
+						<h2 className="text-4xl sm:text-6xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-4">
+							Explore Our Categories
+						</h2>
+						<p className="text-xl text-gray-400 max-w-2xl mx-auto">
+							Books Worth Sharing, Readers Worth Connecting!
+							<br />
+							<span className="text-gray-500">Buy and Sell Books without any hassle</span>
+						</p>
+					</motion.div>
 
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-					{categories.map((category) => (
-						<CategoryItem category={category} key={category.name} />
-					))}
+					<motion.div
+						initial={{ opacity: 0 }}
+						whileInView={{ opacity: 1 }}
+						viewport={{ once: true }}
+						transition={{ duration: 0.8, delay: 0.2 }}
+						className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+					>
+						{categories.map((category, index) => (
+							<motion.div
+								key={category.name}
+								initial={{ opacity: 0, y: 20 }}
+								whileInView={{ opacity: 1, y: 0 }}
+								viewport={{ once: true }}
+								transition={{ duration: 0.5, delay: index * 0.1 }}
+							>
+								<CategoryItem category={category} />
+							</motion.div>
+						))}
+					</motion.div>
+
+					{!isLoading && products.length > 0 && (
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							whileInView={{ opacity: 1, y: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.8 }}
+							className="mt-20"
+						>
+							<FeaturedProducts featuredProducts={products} />
+						</motion.div>
+					)}
 				</div>
-
-				{!isLoading && products.length > 0 && (
-					<FeaturedProducts featuredProducts={products} />
-				)}
 			</div>
 		</div>
 	);
