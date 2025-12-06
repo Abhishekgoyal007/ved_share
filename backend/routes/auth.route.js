@@ -1,14 +1,15 @@
 import express from "express";
-import { 
-  login, 
-  logout, 
-  signup, 
-  refreshToken, 
-  getProfile, 
-  verifyOTP, 
-  resendOtp, 
-  forgotPassword, 
-  resetPassword 
+import {
+  login,
+  logout,
+  signup,
+  refreshToken,
+  getProfile,
+  verifyOTP,
+  resendOtp,
+  forgotPassword,
+  resetPassword,
+  verifyPassword
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
@@ -28,6 +29,7 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
 
 router.post("/refresh-token", refreshToken);
+router.post("/verify-password", protectRoute, verifyPassword);
 router.get("/profile", protectRoute, getProfile);
 
 export default router;

@@ -4,7 +4,7 @@ import Product from "../models/product.model.js";
 
 export const getAllProducts = async (req, res) => {
 	try {
-		const products = await Product.find({}); // find all products
+		const products = await Product.find({}).populate('userId', 'name email'); // populate seller info
 		res.json({ products });
 	} catch (error) {
 		console.log("Error in getAllProducts controller", error.message);
@@ -12,16 +12,55 @@ export const getAllProducts = async (req, res) => {
 	}
 };
 
-export const getMyProducts = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const products = await Product.find({ userId });
+export const getProductById = async (req, res) => {
+	try {
+		const product = await Product.findById(req.params.id).populate('userId', 'name email');
+		if (!product) {
+			return res.status(404).json({ message: "Product not found" });
+		}
+		res.json(product);
+	} catch (error) {
+		console.log("Error in getProductById controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
 
-    res.json({ products });
-  } catch (error) {
-    console.error("Error fetching user products:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
+export const getMyProducts = async (req, res) => {
+	try {
+		const userId = req.user._id;
+		const products = await Product.find({ userId });
+
+		// Add pending offers count to each product
+		const productsWithCounts = products.map(product => {
+			const productObj = product.toObject();
+			productObj.pendingOffersCount = product.swapOffers.filter(offer => offer.status === 'pending').length;
+			return productObj;
+		});
+
+		res.json({ products: productsWithCounts });
+	} catch (error) {
+		console.error("Error fetching user products:", error.message);
+		res.status(500).json({ message: "Server error" });
+	}
+};
+
+export const getPendingOffersCount = async (req, res) => {
+	try {
+		const userId = req.user._id;
+		const products = await Product.find({ userId });
+
+		let totalPendingOffers = 0;
+		products.forEach(product => {
+			if (product.isBookSwap && product.swapOffers) {
+				totalPendingOffers += product.swapOffers.filter(offer => offer.status === 'pending').length;
+			}
+		});
+
+		res.json({ count: totalPendingOffers });
+	} catch (error) {
+		console.error("Error fetching pending offers count:", error.message);
+		res.status(500).json({ message: "Server error" });
+	}
 };
 
 export const getFeaturedProducts = async (req, res) => {
@@ -53,20 +92,39 @@ export const getFeaturedProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
 	try {
-		const { name, description, price, image, category } = req.body;
+		const { name, description, price, image, category, pdf, isBookSwap } = req.body;
 
 		let cloudinaryResponse = null;
+		let cloudinaryPdfResponse = null;
 
+		// ---- IMAGE UPLOAD (PUBLIC) ----
 		if (image) {
-			cloudinaryResponse = await cloudinary.uploader.upload(image, { folder: "products" });
+			cloudinaryResponse = await cloudinary.uploader.upload(image, {
+				upload_preset: "jrjc35xt",   // UNSIGNED → PUBLIC
+				folder: "products",
+				type: "upload"
+			});
 		}
 
+		// ---- PDF UPLOAD (PUBLIC) ----
+		if (pdf) {
+			cloudinaryPdfResponse = await cloudinary.uploader.upload(pdf, {
+				upload_preset: "jrjc35xt",   // UNSIGNED → PUBLIC
+				folder: "products_pdfs",
+				resource_type: "raw",        // IMPORTANT for PDFs
+				type: "upload"
+			});
+		}
+
+		// ---- CREATE PRODUCT ----
 		const product = await Product.create({
 			name,
 			description,
 			price,
-			image: cloudinaryResponse?.secure_url ? cloudinaryResponse.secure_url : "",
+			image: cloudinaryResponse?.secure_url || "",
+			pdfUrl: cloudinaryPdfResponse?.secure_url || "",
 			category,
+			isBookSwap: isBookSwap || false,
 			userId: req.user._id,
 		});
 
@@ -76,6 +134,7 @@ export const createProduct = async (req, res) => {
 		res.status(500).json({ message: "Server error", error: error.message });
 	}
 };
+
 
 export const deleteProduct = async (req, res) => {
 	try {
@@ -138,7 +197,14 @@ export const getRecommendedProducts = async (req, res) => {
 export const getProductsByCategory = async (req, res) => {
 	const { category } = req.params;
 	try {
-		const products = await Product.find({ category });
+		let products;
+		if (category === "book-swap") {
+			products = await Product.find({ isBookSwap: true });
+		} else if (category === "free-section") {
+			products = await Product.find({ price: 0 });
+		} else {
+			products = await Product.find({ category });
+		}
 		res.json({ products });
 	} catch (error) {
 		console.log("Error in getProductsByCategory controller", error.message);
@@ -165,11 +231,134 @@ export const toggleFeaturedProduct = async (req, res) => {
 
 async function updateFeaturedProductsCache() {
 	try {
-		// The lean() method  is used to return plain JavaScript objects instead of full Mongoose documents. This can significantly improve performance
-
 		const featuredProducts = await Product.find({ isFeatured: true }).lean();
 		await redis.set("featured_products", JSON.stringify(featuredProducts));
 	} catch (error) {
 		console.log("error in update cache function");
 	}
 }
+
+export const createSwapOffer = async (req, res) => {
+	try {
+		const { id: targetProductId } = req.params;
+		const { offeredProductId } = req.body;
+		const userId = req.user._id;
+
+		const targetProduct = await Product.findById(targetProductId);
+		if (!targetProduct) {
+			return res.status(404).json({ message: "Target product not found" });
+		}
+
+		if (!targetProduct.isBookSwap) {
+			return res.status(400).json({ message: "This product is not available for swap" });
+		}
+
+		const offeredProduct = await Product.findOne({ _id: offeredProductId, userId });
+		if (!offeredProduct) {
+			return res.status(404).json({ message: "Offered product not found or does not belong to you" });
+		}
+
+		if (!offeredProduct.isBookSwap) {
+			return res.status(400).json({ message: "Offered product must be listed for Book Swap" });
+		}
+
+		// Check if offer already exists
+		const existingOffer = targetProduct.swapOffers.find(
+			(offer) => offer.offeredProductId.toString() === offeredProductId && offer.userId.toString() === userId.toString()
+		);
+
+		if (existingOffer) {
+			return res.status(400).json({ message: "You have already made an offer with this product" });
+		}
+
+		targetProduct.swapOffers.push({
+			offeredProductId,
+			userId,
+		});
+
+		await targetProduct.save();
+
+		res.status(201).json({ message: "Swap offer created successfully", swapOffers: targetProduct.swapOffers });
+	} catch (error) {
+		console.log("Error in createSwapOffer controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+export const acceptSwapOffer = async (req, res) => {
+	try {
+		const { id: productId, offerId } = req.params;
+		const userId = req.user._id;
+
+		const product = await Product.findOne({ _id: productId, userId });
+		if (!product) {
+			return res.status(404).json({ message: "Product not found or you are not the owner" });
+		}
+
+		const offer = product.swapOffers.id(offerId);
+		if (!offer) {
+			return res.status(404).json({ message: "Offer not found" });
+		}
+
+		offer.status = "accepted";
+
+		// Optional: Reject all other pending offers? 
+		// For now, let's just accept this one. We might want to mark the product as 'sold' or 'swapped' later.
+
+		await product.save();
+
+		res.json({ message: "Offer accepted", offer });
+	} catch (error) {
+		console.log("Error in acceptSwapOffer controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+export const rejectSwapOffer = async (req, res) => {
+	try {
+		const { id: productId, offerId } = req.params;
+		const userId = req.user._id;
+
+		const product = await Product.findOne({ _id: productId, userId });
+		if (!product) {
+			return res.status(404).json({ message: "Product not found or you are not the owner" });
+		}
+
+		const offer = product.swapOffers.id(offerId);
+		if (!offer) {
+			return res.status(404).json({ message: "Offer not found" });
+		}
+
+		offer.status = "rejected";
+		await product.save();
+
+		res.json({ message: "Offer rejected", offer });
+	} catch (error) {
+		console.log("Error in rejectSwapOffer controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+export const getSwapOffers = async (req, res) => {
+	try {
+		const { id: productId } = req.params;
+		const userId = req.user._id;
+
+		const product = await Product.findOne({ _id: productId, userId }).populate({
+			path: "swapOffers.offeredProductId",
+			select: "name image description category",
+		}).populate({
+			path: "swapOffers.userId",
+			select: "name email",
+		});
+
+		if (!product) {
+			return res.status(404).json({ message: "Product not found or you are not the owner" });
+		}
+
+		res.json({ offers: product.swapOffers });
+	} catch (error) {
+		console.log("Error in getSwapOffers controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};

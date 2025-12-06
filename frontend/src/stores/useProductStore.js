@@ -5,6 +5,7 @@ import axios from "../lib/axios";
 export const useProductStore = create((set) => ({
 	products: [],
 	loading: false,
+	pendingOffersCount: 0,
 
 	setProducts: (products) => set({ products }),
 	createProduct: async (productData) => {
@@ -67,8 +68,8 @@ export const useProductStore = create((set) => ({
 				loading: false,
 			}));
 			toast.success(
-        `Product ${response.data.isFeatured ? "marked as" : "removed from"} featured`
-      );
+				`Product ${response.data.isFeatured ? "marked as" : "removed from"} featured`
+			);
 		} catch (error) {
 			set({ loading: false });
 			toast.error(error.response.data.error || "Failed to update product");
@@ -87,14 +88,78 @@ export const useProductStore = create((set) => ({
 	},
 
 	fetchMyProducts: async () => {
-  set({ loading: true });
-  try {
-    const response = await axios.get("/products/my-products");
-    set({ products: response.data.products, loading: false });
-  } catch (error) {
-    set({ error: "Failed to fetch your products", loading: false });
-    console.error("Error fetching my products:", error);
-		toast.error(error.response?.data?.error || "Error fetching your products");
-  }
-},
+		set({ loading: true });
+		try {
+			const response = await axios.get("/products/my-products");
+			set({ products: response.data.products, loading: false });
+		} catch (error) {
+			set({ error: "Failed to fetch your products", loading: false });
+			console.error("Error fetching my products:", error);
+			toast.error(error.response?.data?.error || "Error fetching your products");
+		}
+	},
+
+	createSwapOffer: async (targetProductId, offeredProductId) => {
+		set({ loading: true });
+		try {
+			await axios.post(`/products/${targetProductId}/offer`, { offeredProductId });
+			set({ loading: false });
+			toast.success("Swap offer sent successfully!");
+			return true;
+		} catch (error) {
+			set({ loading: false });
+			toast.error(error.response?.data?.message || "Failed to send swap offer");
+			return false;
+		}
+	},
+
+	fetchProductOffers: async (productId) => {
+		set({ loading: true });
+		try {
+			const response = await axios.get(`/products/${productId}/offers`);
+			set({ loading: false });
+			return response.data.offers;
+		} catch (error) {
+			set({ loading: false });
+			toast.error(error.response?.data?.message || "Failed to fetch offers");
+			return [];
+		}
+	},
+
+	acceptSwapOffer: async (productId, offerId) => {
+		set({ loading: true });
+		try {
+			await axios.put(`/products/${productId}/offer/${offerId}/accept`);
+			set({ loading: false });
+			toast.success("Offer accepted!");
+			return true;
+		} catch (error) {
+			set({ loading: false });
+			toast.error(error.response?.data?.message || "Failed to accept offer");
+			return false;
+		}
+	},
+
+	rejectSwapOffer: async (productId, offerId) => {
+		set({ loading: true });
+		try {
+			await axios.put(`/products/${productId}/offer/${offerId}/reject`);
+			set({ loading: false });
+			toast.success("Offer rejected");
+			return true;
+		} catch (error) {
+			set({ loading: false });
+			toast.error(error.response?.data?.message || "Failed to reject offer");
+			return false;
+		}
+	},
+
+	fetchPendingOffersCount: async () => {
+		try {
+			const response = await axios.get("/products/offers/count");
+			set({ pendingOffersCount: response.data.count });
+		} catch (error) {
+			console.error("Error fetching pending offers count:", error);
+		}
+	},
 }));

@@ -2,23 +2,27 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Play, Pause, RotateCcw, Plus, Trash2, Clock,
-    Coffee, Zap, Target, TrendingUp, Award
+    Coffee, Zap, Target, TrendingUp, Award, Edit2, ArrowUp, ArrowDown, Check
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useFocusStore } from "../../../stores/useFocusStore";
+import FocusAnalytics from "./FocusAnalytics";
 
 const FocusSessionTab = () => {
-    const [sessions, setSessions] = useState([]);
-    const [currentIndex, setCurrentIndex] = useState(null);
+    const {
+        sessions, currentIndex, isRunning, sessionStats,
+        addSession, removeSession, updateSession, reorderSessions,
+        setCurrentIndex, toggleTimer, resetTimer, setIsRunning
+    } = useFocusStore();
+
     const [showAddForm, setShowAddForm] = useState(false);
-    const [sessionStats, setSessionStats] = useState({
-        totalSessions: 0,
-        totalMinutes: 0,
-        streak: 0
-    });
+    const [editingId, setEditingId] = useState(null);
+    const [editName, setEditName] = useState("");
+    const [editDuration, setEditDuration] = useState("");
 
     const timerRef = useRef(null);
     const currentSession = sessions[currentIndex] || {};
-    const isRunning = currentSession?.isRunning;
+    const nextSession = sessions[currentIndex + 1];
 
     // Preset durations
     const presets = [
@@ -27,107 +31,52 @@ const FocusSessionTab = () => {
         { label: "Power Hour", duration: 60, icon: Award, color: "from-purple-500 to-pink-500" },
     ];
 
-    // Timer tick effect
-    useEffect(() => {
-        if (currentIndex === null || !isRunning) {
-            clearInterval(timerRef.current);
-            return;
-        }
-
-        timerRef.current = setInterval(() => {
-            setSessions((prev) => {
-                return prev.map((session, idx) => {
-                    if (idx === currentIndex) {
-                        if (session.timeLeft > 0) {
-                            return { ...session, timeLeft: session.timeLeft - 1 };
-                        } else {
-                            clearInterval(timerRef.current);
-                            toast.success(`🎉 ${session.label} completed!`, {
-                                duration: 4000,
-                                icon: "✅"
-                            });
-                            // Update stats
-                            setSessionStats(prev => ({
-                                totalSessions: prev.totalSessions + 1,
-                                totalMinutes: prev.totalMinutes + session.duration,
-                                streak: prev.streak + 1
-                            }));
-                            return { ...session, isRunning: false, completed: true };
-                        }
-                    }
-                    return session;
-                });
-            });
-        }, 1000);
-
-        return () => clearInterval(timerRef.current);
-    }, [currentIndex, isRunning]);
-
-    const toggleSessionRunning = (index) => {
-        setSessions((prev) =>
-            prev.map((s, i) =>
-                i === index
-                    ? { ...s, isRunning: !s.isRunning }
-                    : { ...s, isRunning: false }
-            )
-        );
-        setCurrentIndex(index);
-    };
-
-    const handleReset = () => {
-        clearInterval(timerRef.current);
-        setSessions((prev) =>
-            prev.map((s) => ({
-                ...s,
-                timeLeft: s.duration * 60,
-                isRunning: false,
-                completed: false
-            }))
-        );
-        setCurrentIndex(null);
-    };
-
-    const handleDeleteSession = (indexToDelete) => {
-        setSessions((prev) => {
-            const updated = prev.filter((_, idx) => idx !== indexToDelete);
-
-            if (currentIndex === indexToDelete) {
-                setCurrentIndex(updated.length ? 0 : null);
-            } else if (indexToDelete < currentIndex) {
-                setCurrentIndex((prev) => prev - 1);
-            }
-
-            return updated;
-        });
-    };
-
-    const handleStop = () => {
-        clearInterval(timerRef.current);
-        setSessions((prev) => prev.map((s) => ({ ...s, isRunning: false })));
-    };
+    // Timer is now handled globally by GlobalFocusTimer.jsx
 
     const handleAddSession = (label, duration) => {
-        setSessions((prev) => [
-            ...prev,
-            {
-                id: Date.now(),
-                label,
-                duration,
-                timeLeft: duration * 60,
-                isRunning: false,
-                completed: false
-            },
-        ]);
+        addSession({
+            id: Date.now(),
+            label,
+            duration,
+            timeLeft: duration * 60,
+            isRunning: false,
+            completed: false
+        });
         setShowAddForm(false);
-        if (currentIndex === null) setCurrentIndex(0);
+        toast.success("Session added to queue");
     };
 
     const handlePresetClick = (preset) => {
         handleAddSession(preset.label, preset.duration);
-        toast.success(`${preset.label} session added!`);
+    };
+
+    const startEditing = (session) => {
+        setEditingId(session.id);
+        setEditName(session.label);
+        setEditDuration(session.duration);
+    };
+
+    const saveEdit = (id) => {
+        if (editName && editDuration) {
+            updateSession(id, {
+                label: editName,
+                duration: parseInt(editDuration),
+                timeLeft: parseInt(editDuration) * 60 // Reset time on edit
+            });
+            setEditingId(null);
+            toast.success("Session updated");
+        }
+    };
+
+    const handleStartNext = () => {
+        if (nextSession) {
+            setCurrentIndex(currentIndex + 1);
+            setIsRunning(true);
+        }
     };
 
     const formatTime = (seconds) => {
+        if (seconds < 0) return "00:00";
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
@@ -137,6 +86,8 @@ const FocusSessionTab = () => {
         if (!currentSession.duration) return 0;
         return ((currentSession.duration * 60 - currentSession.timeLeft) / (currentSession.duration * 60)) * 100;
     };
+
+    const isSessionComplete = currentSession?.completed && currentSession?.timeLeft === 0;
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
@@ -203,26 +154,68 @@ const FocusSessionTab = () => {
                                 </div>
                             </div>
 
-                            {/* Control Buttons */}
-                            <div className="flex justify-center gap-4">
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => currentIndex !== null && toggleSessionRunning(currentIndex)}
-                                    disabled={currentIndex === null}
-                                    className="p-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-full shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            {/* Control Buttons or Completion UI */}
+                            {isSessionComplete ? (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="space-y-4"
                                 >
-                                    {isRunning ? <Pause size={24} /> : <Play size={24} />}
-                                </motion.button>
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={handleReset}
-                                    className="p-4 bg-gray-700 hover:bg-gray-600 text-white rounded-full shadow-lg"
-                                >
-                                    <RotateCcw size={24} />
-                                </motion.button>
-                            </div>
+                                    <div className="flex items-center justify-center gap-2 mb-4">
+                                        <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                            <span className="text-3xl">🎉</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-emerald-400 text-2xl font-bold mb-2">
+                                        Session Complete!
+                                    </div>
+                                    <div className="text-gray-400 text-sm mb-6">
+                                        Great work! You completed {currentSession.duration} minutes of focused work.
+                                    </div>
+
+                                    {nextSession ? (
+                                        <>
+                                            <div className="bg-gray-700/50 rounded-xl p-5 border border-gray-600 mb-4">
+                                                <div className="text-gray-400 text-xs uppercase tracking-wide mb-2">Up Next</div>
+                                                <div className="text-white text-lg font-semibold mb-1">{nextSession.label}</div>
+                                                <div className="text-gray-400 text-sm">{nextSession.duration} minutes</div>
+                                            </div>
+                                            <motion.button
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={handleStartNext}
+                                                className="w-full max-w-xs mx-auto px-6 py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-semibold rounded-xl hover:from-emerald-700 hover:to-emerald-600 flex items-center justify-center gap-2 shadow-lg"
+                                            >
+                                                <Play size={20} /> Start Next Session
+                                            </motion.button>
+                                        </>
+                                    ) : (
+                                        <div className="text-gray-400 text-sm">
+                                            All sessions complete! Add more sessions to continue.
+                                        </div>
+                                    )}
+                                </motion.div>
+                            ) : (
+                                <div className="flex justify-center gap-4">
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={toggleTimer}
+                                        disabled={currentIndex === null || sessions.length === 0}
+                                        className="p-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-full shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isRunning ? <Pause size={24} /> : <Play size={24} />}
+                                    </motion.button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={resetTimer}
+                                        className="p-4 bg-gray-700 hover:bg-gray-600 text-white rounded-full shadow-lg"
+                                    >
+                                        <RotateCcw size={24} />
+                                    </motion.button>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
 
@@ -274,11 +267,18 @@ const FocusSessionTab = () => {
                             </div>
                             <div className="bg-gray-700/50 rounded-lg p-4">
                                 <div className="text-gray-400 text-sm mb-1">Total Focus Time</div>
-                                <div className="text-2xl font-bold text-cyan-400">{sessionStats.totalMinutes} min</div>
+                                <div className="text-2xl font-bold text-cyan-400">{sessionStats.totalHours} hrs</div>
+                                <div className="text-xs text-gray-500 mt-1">{sessionStats.totalMinutes} minutes</div>
                             </div>
                             <div className="bg-gray-700/50 rounded-lg p-4">
                                 <div className="text-gray-400 text-sm mb-1">Current Streak</div>
-                                <div className="text-2xl font-bold text-emerald-400">{sessionStats.streak} 🔥</div>
+                                <div className="text-2xl font-bold text-orange-400">{sessionStats.currentStreak} 🔥</div>
+                                <div className="text-xs text-gray-500 mt-1">days in a row</div>
+                            </div>
+                            <div className="bg-gray-700/50 rounded-lg p-4">
+                                <div className="text-gray-400 text-sm mb-1">Best Streak</div>
+                                <div className="text-2xl font-bold text-emerald-400">{sessionStats.longestStreak} 🏆</div>
+                                <div className="text-xs text-gray-500 mt-1">days</div>
                             </div>
                         </div>
                     </motion.div>
@@ -354,7 +354,7 @@ const FocusSessionTab = () => {
                         </AnimatePresence>
 
                         {/* Session List */}
-                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                        <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                             {sessions.length === 0 ? (
                                 <div className="text-center py-8 text-gray-400">
                                     <Coffee size={48} className="mx-auto mb-4 opacity-50" />
@@ -368,32 +368,78 @@ const FocusSessionTab = () => {
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: idx * 0.05 }}
-                                        onClick={() => setCurrentIndex(idx)}
-                                        className={`p-3 rounded-lg border cursor-pointer transition-all ${currentIndex === idx
-                                                ? "bg-cyan-500/20 border-cyan-500/50"
-                                                : "bg-gray-700/50 border-gray-600 hover:border-gray-500"
+                                        className={`p-3 rounded-lg border transition-all ${currentIndex === idx
+                                            ? "bg-cyan-500/20 border-cyan-500/50"
+                                            : "bg-gray-700/50 border-gray-600 hover:border-gray-500"
                                             } ${session.completed ? "opacity-60" : ""}`}
                                     >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-white font-medium">{session.label}</span>
-                                                    {session.completed && <span className="text-xs text-emerald-400">✓</span>}
-                                                </div>
-                                                <div className="text-xs text-gray-400 mt-1">
-                                                    {session.duration} min • {formatTime(session.timeLeft)} left
+                                        {editingId === session.id ? (
+                                            <div className="space-y-2">
+                                                <input
+                                                    value={editName}
+                                                    onChange={(e) => setEditName(e.target.value)}
+                                                    className="w-full px-2 py-1 bg-gray-600 rounded text-sm text-white"
+                                                    placeholder="Name"
+                                                />
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="number"
+                                                        value={editDuration}
+                                                        onChange={(e) => setEditDuration(e.target.value)}
+                                                        className="w-20 px-2 py-1 bg-gray-600 rounded text-sm text-white"
+                                                        placeholder="Min"
+                                                    />
+                                                    <button onClick={() => saveEdit(session.id)} className="p-1 bg-emerald-600 rounded text-white"><Check size={14} /></button>
+                                                    <button onClick={() => setEditingId(null)} className="p-1 bg-gray-600 rounded text-white"><RotateCcw size={14} /></button>
                                                 </div>
                                             </div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDeleteSession(idx);
-                                                }}
-                                                className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
+                                        ) : (
+                                            <div className="flex items-center justify-between group">
+                                                <div
+                                                    className="flex-1 cursor-pointer"
+                                                    onClick={() => setCurrentIndex(idx)}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-white font-medium">{session.label}</span>
+                                                        {session.completed && <span className="text-xs text-emerald-400">✓</span>}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400 mt-1">
+                                                        {session.duration} min • {formatTime(session.timeLeft)} left
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div className="flex flex-col">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); if (idx > 0) reorderSessions(idx, idx - 1); }}
+                                                            disabled={idx === 0}
+                                                            className="text-gray-400 hover:text-white disabled:opacity-30"
+                                                        >
+                                                            <ArrowUp size={12} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); if (idx < sessions.length - 1) reorderSessions(idx, idx + 1); }}
+                                                            disabled={idx === sessions.length - 1}
+                                                            className="text-gray-400 hover:text-white disabled:opacity-30"
+                                                        >
+                                                            <ArrowDown size={12} />
+                                                        </button>
+                                                    </div>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); startEditing(session); }}
+                                                        className="p-1.5 text-blue-400 hover:bg-blue-400/10 rounded"
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); removeSession(session.id); }}
+                                                        className="p-1.5 text-red-400 hover:bg-red-400/10 rounded"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </motion.div>
                                 ))
                             )}
@@ -401,6 +447,19 @@ const FocusSessionTab = () => {
                     </motion.div>
                 </div>
             </div>
+
+            {/* Analytics Dashboard */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-8"
+            >
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-6">
+                    📊 Session Analytics 
+                </h2>
+                <FocusAnalytics />
+            </motion.div>
         </div>
     );
 };

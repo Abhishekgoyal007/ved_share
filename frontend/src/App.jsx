@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import HomePage from "./pages/HomePage";
 import SignUpPage from "./pages/SignUpPage";
@@ -20,9 +20,12 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import LearningDeskPage from "./pages/LearningDeskPage";
 import AboutPage from "./pages/AboutPage";
+import ProfilePage from "./pages/ProfilePage";
 import KeywordExtractorPage from "./pages/KeywordExtractorPage";
 import InterviewSharedPage from "./pages/InterviewSharedPage";
+import ProductDetailsPage from "./pages/ProductDetailsPage";
 import Footer from './components/Footer';
+import GlobalFocusTimer from "./components/GlobalFocusTimer";
 
 function App() {
 	const { user, checkAuth, checkingAuth } = useUserStore();
@@ -37,14 +40,23 @@ function App() {
 		getCartItems();
 	}, [getCartItems, user]);
 
+	const { pathname } = useLocation();
+
+	useEffect(() => {
+		window.scrollTo(0, 0);
+	}, [pathname]);
+
 	if (checkingAuth) return <LoadingSpinner />;
 
 	return (
 		<div className='min-h-screen bg-gray-900 text-white relative overflow-hidden'>
 			{/* Background gradient */}
-			<div className='absolute inset-0 overflow-hidden z-0'>
-				<div className='absolute inset-0'>
-					<div className='absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.3)_0%,rgba(10,80,60,0.2)_45%,rgba(0,0,0,0.1)_100%)]' />
+			<div className='fixed inset-0 z-0'>
+				<div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 opacity-80' />
+				<div className='absolute top-0 left-1/2 -translate-x-1/2 w-full h-full'>
+					<div className='absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.3)_0%,rgba(10,80,60,0.2)_45%,rgba(0,0,0,0.1)_100%)] opacity-0' /> {/* Remove old green */}
+					<div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-cyan-500/10 blur-[120px]" />
+					<div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
 				</div>
 			</div>
 
@@ -72,7 +84,12 @@ function App() {
 						path='/keyword-extractor'
 						element={user ? <KeywordExtractorPage /> : <Navigate to='/login' />}
 					/>
+					<Route
+						path='/profile'
+						element={user ? <ProfilePage /> : <Navigate to='/login' />}
+					/>
 					<Route path='/interview/:id' element={<InterviewSharedPage />} />
+					<Route path='/product/:id' element={<ProductDetailsPage />} />
 					<Route path='/category/:category' element={<CategoryPage />} />
 					<Route path='/cart' element={user ? <CartPage /> : <Navigate to='/login' />} />
 					<Route
@@ -84,6 +101,7 @@ function App() {
 
 				<Footer />
 			</div>
+			<GlobalFocusTimer />
 			<Toaster />
 
 

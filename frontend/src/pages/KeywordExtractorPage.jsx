@@ -43,7 +43,7 @@ const KeywordExtractorPage = () => {
         'application/msword',
         'application/vnd.ms-powerpoint'
       ];
-      
+
       if (validTypes.includes(file.type)) {
         setSelectedFile(file);
         setExtractedKeywords([]);
@@ -77,7 +77,7 @@ const KeywordExtractorPage = () => {
     } catch (error) {
       console.error('Error uploading file:', error);
       if (error.response?.status === 401) {
-        toast.error('Please log in to use the Keyword Extractor');
+        toast.error('Please log in to use the AI Keyword Extractor');
       } else {
         toast.error(error.response?.data?.message || 'Failed to extract keywords');
       }
@@ -97,10 +97,10 @@ const KeywordExtractorPage = () => {
         text: editValue
       });
 
-      setExtractedKeywords(extractedKeywords.map(kw => 
+      setExtractedKeywords(extractedKeywords.map(kw =>
         kw._id === keywordId ? { ...kw, text: editValue } : kw
       ));
-      
+
       setEditingKeyword(null);
       setEditValue('');
       toast.success('Keyword updated successfully');
@@ -170,7 +170,7 @@ const KeywordExtractorPage = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-center mb-8 text-cyan-400">
-          Keyword Extractor - Extract Keywords from Documents
+          AI Keyword Extractor - Extract Keywords from Documents
         </h1>
 
         {/* Upload Section */}

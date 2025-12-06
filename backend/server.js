@@ -14,6 +14,7 @@ import feedbackRoutes from './routes/feedback.route.js';
 import userRoutes from "./routes/user.route.js";
 import extractorRoutes from "./routes/extractor.route.js";
 import interviewRoutes from "./routes/interview.route.js";
+import documentRoutes from "./routes/document.route.js";
 
 
 import { connectDB } from "./lib/db.js";
@@ -49,6 +50,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/extractor', extractorRoutes);
 app.use('/api/interview', interviewRoutes);
+app.use('/api/documents', documentRoutes);
 
 
 

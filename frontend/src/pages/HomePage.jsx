@@ -14,16 +14,21 @@ const categories = [
 	{ href: "/enotes", name: "eNotes", imageUrl: "/enotes.jpg" },
 	{ href: "/printed-novels", name: "Printed Novels", imageUrl: "/printed-novels.jpg" },
 	{ href: "/printed-nonfiction", name: "Printed Non Fiction", imageUrl: "/printed-nonfiction.jpg" },
+];
+
+const specialCategories = [
 	{ href: "/free-section", name: "Free Section", imageUrl: "/free-section.png" },
+	{ href: "/book-swap", name: "Book Swap", imageUrl: "/bookswap.jpg" },
 ];
 
 const HomePage = () => {
-	const { fetchFeaturedProducts, products, isLoading } = useProductStore();
+	const { fetchFeaturedProducts, products, isLoading, pendingOffersCount, fetchPendingOffersCount } = useProductStore();
 	const { user } = useUserStore();
 
 	useEffect(() => {
 		fetchFeaturedProducts();
-	}, [fetchFeaturedProducts]);
+		if (user) fetchPendingOffersCount();
+	}, [fetchFeaturedProducts, fetchPendingOffersCount, user]);
 
 	return (
 		<div className="relative min-h-screen text-white overflow-hidden">
@@ -95,10 +100,15 @@ const HomePage = () => {
 									<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
 										<Link
 											to="/dashboard"
-											className="px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold shadow-lg transition-all duration-200 flex items-center gap-2"
+											className="px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold shadow-lg transition-all duration-200 flex items-center gap-2 relative"
 										>
 											Dashboard
 											<ArrowRight size={20} />
+											{pendingOffersCount > 0 && (
+												<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
+													{pendingOffersCount}
+												</span>
+											)}
 										</Link>
 									</motion.div>
 									<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -123,11 +133,10 @@ const HomePage = () => {
 						className="md:w-1/2 mt-16 md:mt-0 flex justify-center"
 					>
 						<div className="relative">
-							<div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-3xl blur-2xl" />
 							<img
 								src="/hero-image2.png"
 								alt="Books"
-								className="relative w-full max-w-lg rounded-3xl shadow-2xl"
+								className="relative w-full max-w-2xl rounded-3xl shadow-2xl"
 							/>
 						</div>
 					</motion.div>
@@ -159,9 +168,30 @@ const HomePage = () => {
 						whileInView={{ opacity: 1 }}
 						viewport={{ once: true }}
 						transition={{ duration: 0.8, delay: 0.2 }}
-						className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+						className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"
 					>
 						{categories.map((category, index) => (
+							<motion.div
+								key={category.name}
+								initial={{ opacity: 0, y: 20 }}
+								whileInView={{ opacity: 1, y: 0 }}
+								viewport={{ once: true }}
+								transition={{ duration: 0.5, delay: index * 0.1 }}
+							>
+								<CategoryItem category={category} />
+							</motion.div>
+						))}
+					</motion.div>
+
+					{/* Special Categories (Free & Book Swap) */}
+					<motion.div
+						initial={{ opacity: 0 }}
+						whileInView={{ opacity: 1 }}
+						viewport={{ once: true }}
+						transition={{ duration: 0.8, delay: 0.4 }}
+						className="grid grid-cols-1 md:grid-cols-2 gap-6"
+					>
+						{specialCategories.map((category, index) => (
 							<motion.div
 								key={category.name}
 								initial={{ opacity: 0, y: 20 }}

@@ -301,3 +301,24 @@ export const getProfile = async (req, res) => {
 	}
 };
 
+export const verifyPassword = async (req, res) => {
+	try {
+		const { password } = req.body;
+		const user = await User.findById(req.user._id);
+
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+
+		const isMatch = await user.comparePassword(password);
+		if (!isMatch) {
+			return res.status(400).json({ message: "Invalid password" });
+		}
+
+		res.json({ message: "Password verified" });
+	} catch (error) {
+		console.log("Error in verifyPassword controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+

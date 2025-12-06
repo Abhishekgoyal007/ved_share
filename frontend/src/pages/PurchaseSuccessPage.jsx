@@ -19,14 +19,24 @@ const PurchaseSuccessPage = () => {
 				clearCart();
 			} catch (error) {
 				console.log(error);
+				setError(error.response?.data?.message || "Failed to confirm order. Please contact support.");
 			} finally {
 				setIsProcessing(false);
 			}
 		};
 
-		const sessionId = new URLSearchParams(window.location.search).get("session_id");
+		const urlParams = new URLSearchParams(window.location.search);
+		const sessionId = urlParams.get("session_id");
+		const source = urlParams.get("source");
+
 		if (sessionId) {
-			handleCheckoutSuccess(sessionId);
+			if (source === "upi") {
+				// UPI payment is already verified and order created in the previous step
+				clearCart();
+				setIsProcessing(false);
+			} else {
+				handleCheckoutSuccess(sessionId);
+			}
 		} else {
 			setIsProcessing(false);
 			setError("No session ID found in the URL");

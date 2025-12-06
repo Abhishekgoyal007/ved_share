@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { PlusCircle, Upload, Loader } from "lucide-react";
+import { PlusCircle, Upload, Loader, Image as ImageIcon } from "lucide-react";
 import { useProductStore } from "../../stores/useProductStore";
 
 const categories = [
-  "printed-textbooks", 
-  "etextbooks",
-  "hardcopy-notes",
-  "enotes",
-  "printed-novels",
-  "printed-nonfiction",
-  "free-section"
+	"printed-textbooks",
+	"etextbooks",
+	"hardcopy-notes",
+	"enotes",
+	"printed-novels",
+	"printed-nonfiction"
 ];
+
 const CreateProductForm = () => {
 	const [newProduct, setNewProduct] = useState({
 		name: "",
@@ -19,15 +19,41 @@ const CreateProductForm = () => {
 		price: "",
 		category: "",
 		image: "",
+		pdf: "",
+		isBookSwap: false,
 	});
+	const [isFree, setIsFree] = useState(false);
+	const [isBookSwap, setIsBookSwap] = useState(false);
 
 	const { createProduct, loading } = useProductStore();
+
+	const handleFreeToggle = (checked) => {
+		setIsFree(checked);
+		if (checked) {
+			setIsBookSwap(false);
+			setNewProduct({ ...newProduct, price: "0", isBookSwap: false });
+		} else {
+			setNewProduct({ ...newProduct, price: "" });
+		}
+	};
+
+	const handleBookSwapToggle = (checked) => {
+		setIsBookSwap(checked);
+		if (checked) {
+			setIsFree(false);
+			setNewProduct({ ...newProduct, price: "0", isBookSwap: true });
+		} else {
+			setNewProduct({ ...newProduct, price: "", isBookSwap: false });
+		}
+	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		try {
 			await createProduct(newProduct);
-			setNewProduct({ name: "", description: "", price: "", category: "", image: "" });
+			setNewProduct({ name: "", description: "", price: "", category: "", image: "", pdf: "", isBookSwap: false });
+			setIsFree(false);
+			setIsBookSwap(false);
 		} catch {
 			console.log("error creating a product");
 		}
@@ -46,114 +72,193 @@ const CreateProductForm = () => {
 		}
 	};
 
+	const handlePdfChange = (e) => {
+		const file = e.target.files[0];
+		if (file) {
+			const reader = new FileReader();
+
+			reader.onloadend = () => {
+				setNewProduct({ ...newProduct, pdf: reader.result });
+			};
+
+			reader.readAsDataURL(file); // base64
+		}
+	};
+
 	return (
 		<motion.div
-			className='bg-gray-800 shadow-lg rounded-lg p-8 mb-8 max-w-xl mx-auto'
+			className='bg-gray-800/60 backdrop-blur-md border border-gray-700/50 shadow-xl rounded-2xl p-8 mb-8 max-w-2xl mx-auto'
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.8 }}
 		>
-			<h2 className='text-2xl font-semibold mb-6 text-cyan-300'>Create New Product</h2>
+			<h2 className='text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500'>
+				Create New Product
+			</h2>
 
-			<form onSubmit={handleSubmit} className='space-y-4'>
-				<div>
-					<label htmlFor='name' className='block text-sm font-medium text-gray-300'>
-						Product Name
-					</label>
-					<input
-						type='text'
-						id='name'
-						name='name'
-						value={newProduct.name}
-						onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-						className='mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2
-						 px-3 text-white focus:outline-none focus:ring-2
-						focus:ring-cyan-500 focus:border-cyan-500'
-						required
-					/>
+			<form onSubmit={handleSubmit} className='space-y-6'>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div className="space-y-6">
+						<div>
+							<label htmlFor='name' className='block text-sm font-medium text-gray-300 mb-2'>
+								Product Name
+							</label>
+							<input
+								type='text'
+								id='name'
+								name='name'
+								value={newProduct.name}
+								onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+								className='block w-full bg-gray-700/50 border border-gray-600 rounded-xl shadow-sm py-2.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200'
+								placeholder="e.g., Physics NCERT"
+								required
+							/>
+						</div>
+
+						<div>
+							<div className="flex items-center justify-between mb-2">
+								<label htmlFor='price' className='block text-sm font-medium text-gray-300'>
+									Price (₹)
+								</label>
+								<div className="flex items-center gap-4">
+									<div className="flex items-center">
+										<input
+											type="checkbox"
+											id="isFree"
+											checked={isFree}
+											onChange={(e) => handleFreeToggle(e.target.checked)}
+											className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
+										/>
+										<label htmlFor="isFree" className="ml-2 text-sm font-medium text-gray-300 cursor-pointer">
+											List for Free
+										</label>
+									</div>
+									<div className="flex items-center">
+										<input
+											type="checkbox"
+											id="isBookSwap"
+											checked={isBookSwap}
+											onChange={(e) => handleBookSwapToggle(e.target.checked)}
+											className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
+										/>
+										<label htmlFor="isBookSwap" className="ml-2 text-sm font-medium text-gray-300 cursor-pointer">
+											Book Swap
+										</label>
+									</div>
+								</div>
+							</div>
+							<input
+								type='number'
+								id='price'
+								name='price'
+								value={newProduct.price}
+								onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+								step='0.01'
+								className='block w-full bg-gray-700/50 border border-gray-600 rounded-xl shadow-sm py-2.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
+								placeholder="0.00"
+								required
+								disabled={isFree || isBookSwap}
+							/>
+						</div>
+
+						<div>
+							<label htmlFor='category' className='block text-sm font-medium text-gray-300 mb-2'>
+								Category
+							</label>
+							<select
+								id='category'
+								name='category'
+								value={newProduct.category}
+								onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+								className='block w-full bg-gray-700/50 border border-gray-600 rounded-xl shadow-sm py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200'
+								required
+							>
+								<option value=''>Select a category</option>
+								{categories.map((category) => (
+									<option key={category} value={category}>
+										{category.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}
+									</option>
+								))}
+							</select>
+						</div>
+					</div>
+
+					<div className="space-y-6">
+						<div>
+							<label htmlFor='description' className='block text-sm font-medium text-gray-300 mb-2'>
+								Description
+							</label>
+							<textarea
+								id='description'
+								name='description'
+								value={newProduct.description}
+								onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+								rows='4'
+								className='block w-full bg-gray-700/50 border border-gray-600 rounded-xl shadow-sm py-2.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200 resize-none'
+								placeholder="Describe your product..."
+								required
+							/>
+						</div>
+
+						<div>
+							<label className='block text-sm font-medium text-gray-300 mb-2'>
+								Product Image
+							</label>
+							<div className="flex items-center justify-center w-full">
+								<label
+									htmlFor='image'
+									className='flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-xl cursor-pointer bg-gray-700/30 hover:bg-gray-700/50 transition-colors duration-200 group overflow-hidden relative'
+								>
+									{newProduct.image ? (
+										<img src={newProduct.image} alt="Preview" className="w-full h-full object-cover" />
+									) : (
+										<div className='flex flex-col items-center justify-center pt-5 pb-6'>
+											<Upload className='w-8 h-8 mb-3 text-gray-400 group-hover:text-cyan-400 transition-colors duration-200' />
+											<p className='text-sm text-gray-400 group-hover:text-gray-300'>
+												<span className='font-semibold'>Click to upload</span> or drag and drop
+											</p>
+										</div>
+									)}
+									<input type='file' id='image' className='hidden' accept='image/*' onChange={handleImageChange} />
+								</label>
+							</div>
+						</div>
+					</div>
 				</div>
 
-				<div>
-					<label htmlFor='description' className='block text-sm font-medium text-gray-300'>
-						Description
-					</label>
-					<textarea
-						id='description'
-						name='description'
-						value={newProduct.description}
-						onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-						rows='3'
-						className='mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm
-						 py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 
-						 focus:border-cyan-500'
-						required
-					/>
-				</div>
-
-				<div>
-					<label htmlFor='price' className='block text-sm font-medium text-gray-300'>
-						Price
-					</label>
-					<input
-						type='number'
-						id='price'
-						name='price'
-						value={newProduct.price}
-						onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-						step='0.01'
-						className='mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm 
-						py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500
-						 focus:border-cyan-500'
-						required
-					/>
-				</div>
-
-				<div>
-					<label htmlFor='category' className='block text-sm font-medium text-gray-300'>
-						Category
-					</label>
-					<select
-						id='category'
-						name='category'
-						value={newProduct.category}
-						onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-						className='mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md
-						 shadow-sm py-2 px-3 text-white focus:outline-none 
-						 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500'
-						required
-					>
-						<option value=''>Select a category</option>
-						{categories.map((category) => (
-							<option key={category} value={category}>
-								{category}
-							</option>
-						))}
-					</select>
-				</div>
-
-				<div className='mt-1 flex items-center'>
-					<input type='file' id='image' className='sr-only' accept='image/*' onChange={handleImageChange} />
-					<label
-						htmlFor='image'
-						className='cursor-pointer bg-gray-700 py-2 px-3 border border-gray-600 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-300 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500'
-					>
-						<Upload className='h-5 w-5 inline-block mr-2' />
-						Upload Image
-					</label>
-					{newProduct.image && <span className='ml-3 text-sm text-gray-400'>Image uploaded </span>}
-				</div>
+				{(newProduct.category === "etextbooks" || newProduct.category === "enotes") && (
+					<div className="mt-6">
+						<label className='block text-sm font-medium text-gray-300 mb-2'>
+							Upload PDF
+						</label>
+						<div className="flex items-center justify-center w-full">
+							<label
+								htmlFor='pdf'
+								className='flex flex-col items-center justify-center w-full h-24 border-2 border-gray-600 border-dashed rounded-xl cursor-pointer bg-gray-700/30 hover:bg-gray-700/50 transition-colors duration-200 group'
+							>
+								<div className='flex flex-col items-center justify-center pt-5 pb-6'>
+									<Upload className='w-8 h-8 mb-3 text-gray-400 group-hover:text-cyan-400 transition-colors duration-200' />
+									<p className='text-sm text-gray-400 group-hover:text-gray-300'>
+										{newProduct.pdf ? "PDF Selected" : <><span className='font-semibold'>Click to upload PDF</span> or drag and drop</>}
+									</p>
+								</div>
+								<input type='file' id='pdf' className='hidden' accept='.pdf' onChange={handlePdfChange} />
+							</label>
+						</div>
+					</div>
+				)}
 
 				<button
 					type='submit'
-					className='w-full flex justify-center py-2 px-4 border border-transparent rounded-md 
-					shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 
-					focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50'
+					className='w-full flex justify-center py-3 px-4 border border-transparent rounded-xl 
+					shadow-lg text-sm font-bold text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 
+					focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 transition-all duration-200 transform hover:scale-[1.02] mt-6'
 					disabled={loading}
 				>
 					{loading ? (
 						<>
 							<Loader className='mr-2 h-5 w-5 animate-spin' aria-hidden='true' />
-							Loading...
+							Creating Product...
 						</>
 					) : (
 						<>

@@ -4,7 +4,7 @@ import { Plus, ArrowLeft, Save, Share2, Loader, FileText, Sparkles, Send, CheckC
 import axios from "../../../lib/axios";
 import toast from "react-hot-toast";
 
-const InterviewPrepTab = () => {
+const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
     const [quizzes, setQuizzes] = useState([]);
     const [loading, setLoading] = useState(false);
     const [generating, setGenerating] = useState(false);
@@ -18,6 +18,18 @@ const InterviewPrepTab = () => {
     useEffect(() => {
         fetchQuizzes();
     }, []);
+
+    useEffect(() => {
+        if (initialData) {
+            setFormData(prev => ({
+                ...prev,
+                description: initialData.description,
+                title: "Quiz from Keywords" // Optional default title
+            }));
+            setView("create");
+            if (onDataConsumed) onDataConsumed();
+        }
+    }, [initialData, onDataConsumed]);
 
     const fetchQuizzes = async () => {
         try {
@@ -163,7 +175,7 @@ const InterviewPrepTab = () => {
         <div className="p-6 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-8">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">
-                    Interview Prep
+                    AI Interview Prep
                 </h2>
                 {view === "list" && (
                     <motion.button

@@ -36,7 +36,7 @@ export const useCartStore = create((set, get) => ({
 	getCartItems: async () => {
 		try {
 			const { user } = useUserStore.getState();
-			if (!user) return; 	
+			if (!user) return;
 			const res = await axios.get("/cart");
 			set({ cart: res.data });
 			get().calculateTotals();
@@ -57,8 +57,8 @@ export const useCartStore = create((set, get) => ({
 				const existingItem = prevState.cart.find((item) => item._id === product._id);
 				const newCart = existingItem
 					? prevState.cart.map((item) =>
-							item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
-					  )
+						item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
+					)
 					: [...prevState.cart, { ...product, quantity: 1 }];
 				return { cart: newCart };
 			});

@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import axios from '../../../lib/axios';
 
-const KeywordExtractorTab = () => {
+const KeywordExtractorTab = ({ onCreateQuiz }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [extractedKeywords, setExtractedKeywords] = useState([]);
     const [savedDocuments, setSavedDocuments] = useState([]);
@@ -156,7 +156,7 @@ const KeywordExtractorTab = () => {
         <div className="p-6 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-8">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-                    Keyword Extractor
+                    AI Keyword Extractor
                 </h2>
             </div>
 
@@ -210,15 +210,26 @@ const KeywordExtractorTab = () => {
                 >
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-xl font-semibold text-white">Extracted Keywords</h3>
-                        {extractedKeywords.length > 0 && (
-                            <button
-                                onClick={() => setAddingKeyword(true)}
-                                className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-1 text-sm font-medium"
-                            >
-                                <Plus size={14} />
-                                Add
-                            </button>
-                        )}
+                        <div className="flex gap-2">
+                            {extractedKeywords.length > 0 && onCreateQuiz && (
+                                <button
+                                    onClick={() => onCreateQuiz(extractedKeywords)}
+                                    className="px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg hover:from-cyan-700 hover:to-blue-700 flex items-center gap-1 text-sm font-medium shadow-lg"
+                                >
+                                    <Sparkles size={14} />
+                                    Create Quiz
+                                </button>
+                            )}
+                            {extractedKeywords.length > 0 && (
+                                <button
+                                    onClick={() => setAddingKeyword(true)}
+                                    className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-1 text-sm font-medium"
+                                >
+                                    <Plus size={14} />
+                                    Add
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {extractedKeywords.length === 0 ? (

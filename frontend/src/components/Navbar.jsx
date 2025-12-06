@@ -1,13 +1,35 @@
-import { ShoppingCart, UserPlus, LogIn, LogOut, LayoutDashboard, BookOpen } from "lucide-react";
+import { ShoppingCart, UserPlus, LogIn, LogOut, LayoutDashboard, BookOpen, User, ChevronDown, PlusCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
+import { useProductStore } from "../stores/useProductStore";
+import { useState, useRef, useEffect } from "react";
 import vs_logo from "/vs_logo.png";
 
 const Navbar = () => {
 	const { user, logout } = useUserStore();
+	const isAdmin = user?.role === "admin";
 	const { cart } = useCartStore();
+	const { pendingOffersCount, fetchPendingOffersCount } = useProductStore();
+
+	useEffect(() => {
+		if (user) fetchPendingOffersCount();
+	}, [fetchPendingOffersCount, user]);
+	const [isProfileOpen, setIsProfileOpen] = useState(false);
+	const dropdownRef = useRef(null);
+
+	// Close dropdown when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+				setIsProfileOpen(false);
+			}
+		};
+
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
 
 	return (
 		<header className='fixed top-0 left-0 w-full bg-gray-900/95 backdrop-blur-md shadow-xl z-40 border-b border-gray-800'>
@@ -31,6 +53,7 @@ const Navbar = () => {
 						>
 							Home
 						</Link>
+
 						<Link
 							to={"/about"}
 							className='text-gray-300 hover:text-cyan-400 transition-all duration-200 font-medium px-3 py-2 rounded-lg hover:bg-gray-800/50'
@@ -62,11 +85,16 @@ const Navbar = () => {
 						{user && (
 							<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
 								<Link
-									className='bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition-all duration-200 flex items-center gap-2'
+									className='bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition-all duration-200 flex items-center gap-2 relative'
 									to={"/dashboard"}
 								>
 									<LayoutDashboard size={18} />
 									<span className='hidden sm:inline'>Dashboard</span>
+									{pendingOffersCount > 0 && (
+										<span className='absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse shadow-sm border border-white/20'>
+											{pendingOffersCount}
+										</span>
+									)}
 								</Link>
 							</motion.div>
 						)}
@@ -84,17 +112,69 @@ const Navbar = () => {
 							</motion.div>
 						)}
 
-						{/* Auth Buttons */}
+						{/* Auth Buttons / Profile Dropdown */}
 						{user ? (
-							<motion.button
-								whileHover={{ scale: 1.05 }}
-								whileTap={{ scale: 0.95 }}
-								className='bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white py-2 px-4 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md'
-								onClick={logout}
-							>
-								<LogOut size={18} />
-								<span className='hidden sm:inline'>Logout</span>
-							</motion.button>
+							<div className="relative" ref={dropdownRef}>
+								<motion.button
+									whileHover={{ scale: 1.05 }}
+									whileTap={{ scale: 0.95 }}
+									className='bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white py-2 px-3 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md'
+									onClick={() => setIsProfileOpen(!isProfileOpen)}
+								>
+									<div className="h-8 w-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
+										<span className="text-white font-bold text-sm">
+											{user.name?.charAt(0).toUpperCase() || "U"}
+										</span>
+									</div>
+									<span className='hidden sm:inline'>{user.name}</span>
+									<ChevronDown size={16} className={`transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
+								</motion.button>
+
+								<AnimatePresence>
+									{isProfileOpen && (
+										<motion.div
+											initial={{ opacity: 0, y: -10 }}
+											animate={{ opacity: 1, y: 0 }}
+											exit={{ opacity: 0, y: -10 }}
+											transition={{ duration: 0.2 }}
+											className="absolute right-0 mt-2 w-56 bg-gray-800/95 backdrop-blur-md border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50"
+										>
+											<div className="p-3 border-b border-gray-700">
+												<p className="text-sm font-semibold text-white">{user.name}</p>
+												<p className="text-xs text-gray-400">{user.email}</p>
+											</div>
+											<div className="py-2">
+												<Link
+													to="/profile"
+													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-cyan-400 transition-colors"
+													onClick={() => setIsProfileOpen(false)}
+												>
+													<User size={18} />
+													Your Profile
+												</Link>
+												<Link
+													to="/dashboard?tab=create"
+													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-cyan-400 transition-colors"
+													onClick={() => setIsProfileOpen(false)}
+												>
+													<PlusCircle size={18} />
+													Create Product
+												</Link>
+												<button
+													onClick={() => {
+														setIsProfileOpen(false);
+														logout();
+													}}
+													className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-red-400 transition-colors"
+												>
+													<LogOut size={18} />
+													Logout
+												</button>
+											</div>
+										</motion.div>
+									)}
+								</AnimatePresence>
+							</div>
 						) : (
 							<>
 								<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
