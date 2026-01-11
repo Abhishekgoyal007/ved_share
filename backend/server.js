@@ -27,8 +27,34 @@ const PORT = process.env.PORT || 5001;
 const __dirname = path.resolve();
 
 // CORS configuration
+const allowedOrigins = [
+	"http://localhost:5173",
+	"http://localhost:5174",
+	"http://localhost:3000",
+	"http://127.0.0.1:5173",
+	"http://127.0.0.1:5174",
+	"http://127.0.0.1:3000",
+	process.env.CLIENT_URL,
+	/\.vercel\.app$/,  // Allow all Vercel preview URLs
+];
+
 app.use(cors({
-	origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:3000"],
+	origin: function (origin, callback) {
+		// Allow requests with no origin (like mobile apps or curl)
+		if (!origin) return callback(null, true);
+
+		// Check if origin is allowed
+		const isAllowed = allowedOrigins.some(allowed => {
+			if (allowed instanceof RegExp) return allowed.test(origin);
+			return allowed === origin;
+		});
+
+		if (isAllowed) {
+			callback(null, true);
+		} else {
+			callback(null, true); // Allow all in production for now
+		}
+	},
 	credentials: true
 }));
 
