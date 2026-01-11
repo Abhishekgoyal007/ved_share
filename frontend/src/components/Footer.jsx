@@ -3,7 +3,7 @@ import { useUserStore } from "../stores/useUserStore";
 import { useState, useEffect } from "react";
 import axios from "../lib/axios";
 import toast from "react-hot-toast";
-import { Send, Linkedin } from "lucide-react";
+import { Send, Linkedin, BookOpen, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 
@@ -53,15 +53,15 @@ const Footer = () => {
 
           {/* Section 1: Brand & Info */}
           <div className="md:col-span-4 space-y-6">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              VedShare 📚
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent flex items-center gap-2">
+              VedShare <BookOpen size={24} className="text-cyan-400" />
             </h2>
             <p className="text-gray-400 leading-relaxed">
               Buy, Sell & Learn — all in one platform. <br />
               Empowering students to share knowledge and resources efficiently.
             </p>
             <p className="text-sm text-gray-500">
-              Built with ❤️ by students, for students.
+              <span className="flex items-center gap-1">Built with <Heart size={14} className="text-red-500 fill-red-500" /> by students, for students.</span>
             </p>
           </div>
 

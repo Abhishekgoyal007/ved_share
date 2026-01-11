@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Play, Pause, RotateCcw, Plus, Trash2, Clock,
-    Coffee, Zap, Target, TrendingUp, Award, Edit2, ArrowUp, ArrowDown, Check
+    Coffee, Zap, Target, TrendingUp, Award, Edit2, ArrowUp, ArrowDown, Check, PartyPopper, Flame, Trophy, BarChart3
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useFocusStore } from "../../../stores/useFocusStore";
@@ -163,7 +163,7 @@ const FocusSessionTab = () => {
                                 >
                                     <div className="flex items-center justify-center gap-2 mb-4">
                                         <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                                            <span className="text-3xl">🎉</span>
+                                            <PartyPopper className="text-emerald-400" size={32} />
                                         </div>
                                     </div>
                                     <div className="text-emerald-400 text-2xl font-bold mb-2">
@@ -272,12 +272,12 @@ const FocusSessionTab = () => {
                             </div>
                             <div className="bg-gray-700/50 rounded-lg p-4">
                                 <div className="text-gray-400 text-sm mb-1">Current Streak</div>
-                                <div className="text-2xl font-bold text-orange-400">{sessionStats.currentStreak} 🔥</div>
+                                <div className="text-2xl font-bold text-orange-400 flex items-center gap-2">{sessionStats.currentStreak} <Flame className="text-orange-400" size={24} /></div>
                                 <div className="text-xs text-gray-500 mt-1">days in a row</div>
                             </div>
                             <div className="bg-gray-700/50 rounded-lg p-4">
                                 <div className="text-gray-400 text-sm mb-1">Best Streak</div>
-                                <div className="text-2xl font-bold text-emerald-400">{sessionStats.longestStreak} 🏆</div>
+                                <div className="text-2xl font-bold text-emerald-400 flex items-center gap-2">{sessionStats.longestStreak} <Trophy className="text-yellow-400" size={24} /></div>
                                 <div className="text-xs text-gray-500 mt-1">days</div>
                             </div>
                         </div>
@@ -455,8 +455,8 @@ const FocusSessionTab = () => {
                 transition={{ delay: 0.3 }}
                 className="mt-8"
             >
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-6">
-                    📊 Session Analytics 
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-6 flex items-center gap-2">
+                    <BarChart3 className="text-purple-400" size={28} /> Session Analytics
                 </h2>
                 <FocusAnalytics />
             </motion.div>

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useFocusStore } from "../stores/useFocusStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { Maximize2, Play } from "lucide-react";
+import { Maximize2, Play, PartyPopper, CheckCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -53,7 +53,7 @@ const GlobalFocusTimer = () => {
                             <div className="flex flex-col gap-3 p-2">
                                 <div className="flex items-center gap-2">
                                     <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                                        <span className="text-2xl">🎉</span>
+                                        <PartyPopper size={24} className="text-emerald-400" />
                                     </div>
                                     <div className="flex-1">
                                         <div className="font-semibold text-gray-900">{current.label} completed!</div>
@@ -79,15 +79,15 @@ const GlobalFocusTimer = () => {
                             </div>
                         ), {
                             duration: 10000,
-                            icon: "✅",
+                            icon: <CheckCircle size={18} className="text-emerald-400" />,
                             style: {
                                 minWidth: '320px'
                             }
                         });
                     } else {
-                        toast.success(`🎉 ${current.label} completed!`, {
+                        toast.success(<span className="flex items-center gap-2"><PartyPopper size={16} />{current.label} completed!</span>, {
                             duration: 5000,
-                            icon: "✅"
+                            icon: <CheckCircle size={18} className="text-emerald-400" />
                         });
                     }
                 }

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, BookOpen, Hand } from "lucide-react";
 import CategoryItem from "../components/CategoryItem";
 import { useProductStore } from "../stores/useProductStore";
 import { useUserStore } from "../stores/useUserStore";
@@ -44,9 +44,9 @@ const HomePage = () => {
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ duration: 0.8 }}
-							className="text-5xl sm:text-7xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent mb-6"
+							className="text-5xl sm:text-7xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent mb-6 flex items-center gap-4"
 						>
-							VedShare 📚
+							VedShare <BookOpen className="w-12 h-12 sm:w-16 sm:h-16 text-cyan-400" />
 						</motion.h1>
 
 						<motion.p
@@ -56,8 +56,8 @@ const HomePage = () => {
 							className="text-xl sm:text-2xl text-gray-300 mb-8"
 						>
 							{user ? (
-								<span className="text-2xl sm:text-3xl">
-									👋 Welcome back, <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent font-semibold">{user.name}</span>!
+								<span className="text-2xl sm:text-3xl flex items-center gap-2">
+									<Hand className="w-8 h-8 text-yellow-400 animate-wave" /> Welcome back, <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent font-semibold">{user.name}</span>!
 								</span>
 							) : (
 								<span className="leading-relaxed">

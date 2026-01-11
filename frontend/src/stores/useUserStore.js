@@ -6,9 +6,9 @@ export const useUserStore = create((set, get) => ({
 	user: null,
 	loading: false,
 	checkingAuth: true,
-	otpEmail: null,  
-	error: null,     
-	signup: async ({ name, email, password, confirmPassword }) => {
+	otpEmail: null,
+	error: null,
+	signup: async ({ name, email, password, confirmPassword, captchaToken }) => {
 		set({ loading: true });
 
 		if (password !== confirmPassword) {
@@ -17,14 +17,14 @@ export const useUserStore = create((set, get) => ({
 		}
 
 		try {
-			const res = await axios.post("/auth/signup", { name, email, password });
-			set({ 
-      user: res.data.user,
-      accessToken: res.data.accessToken,
-      refreshToken: res.data.refreshToken,
-      otpEmail: email,
-      loading: false
-    });
+			const res = await axios.post("/auth/signup", { name, email, password, captchaToken });
+			set({
+				user: res.data.user,
+				accessToken: res.data.accessToken,
+				refreshToken: res.data.refreshToken,
+				otpEmail: email,
+				loading: false
+			});
 			toast.success("Signup successful. Please verify your email.");
 			return { success: true };
 		} catch (error) {
@@ -34,44 +34,44 @@ export const useUserStore = create((set, get) => ({
 		}
 	},
 
-verifyOtp: async (otp) => {
-  set({ loading: true });
-  try {
-    const res = await axios.post('/auth/verify-otp', { 
-      email: get().otpEmail, 
-      otp 
-    });
-    set({ 
-      user: res.data, 
-      loading: false, 
-      otpEmail: null,
-    });
-		 toast.success("OTP verified successfully!");
-    return true; // Return success status
-  } catch (error) {
-    set({ loading: false });
-    toast.error(error.response?.data?.message || "Invalid verification code");
-    return false; // Return failure status
-  }
-},
+	verifyOtp: async (otp) => {
+		set({ loading: true });
+		try {
+			const res = await axios.post('/auth/verify-otp', {
+				email: get().otpEmail,
+				otp
+			});
+			set({
+				user: res.data,
+				loading: false,
+				otpEmail: null,
+			});
+			toast.success("OTP verified successfully!");
+			return true; // Return success status
+		} catch (error) {
+			set({ loading: false });
+			toast.error(error.response?.data?.message || "Invalid verification code");
+			return false; // Return failure status
+		}
+	},
 
-resendOtp: async () => {
-  set({ loading: true, error: null });
-  try {
-    await axios.post('/auth/resend-otp', { email: get().otpEmail });
-    set({ loading: false });
-		toast.success("OTP resent to your email");
-  } catch (error) {
-    set({ loading: false });
-    toast.error(error.response?.data?.message || "An error occurred");
-  }
-},
+	resendOtp: async () => {
+		set({ loading: true, error: null });
+		try {
+			await axios.post('/auth/resend-otp', { email: get().otpEmail });
+			set({ loading: false });
+			toast.success("OTP resent to your email");
+		} catch (error) {
+			set({ loading: false });
+			toast.error(error.response?.data?.message || "An error occurred");
+		}
+	},
 
-	login: async (email, password) => {
+	login: async (email, password, captchaToken = null) => {
 		set({ loading: true });
 
 		try {
-			const res = await axios.post("/auth/login", { email, password });
+			const res = await axios.post("/auth/login", { email, password, captchaToken });
 			set({ user: res.data, loading: false });
 			toast.success("Logged in successfully");
 		} catch (error) {
@@ -90,34 +90,86 @@ resendOtp: async () => {
 		}
 	},
 
-forgotPassword: async (email) => {
-  set({ loading: true, error: null });
-  try {
-    await axios.post('/auth/forgot-password', { email });
-    set({ loading: false });
-		toast.success("Password reset email sent!");
-  } catch (error) {
-    set({ loading: false });
-    toast.error(error.response?.data?.message || "An error occurred");
-  }
-},
+	// Google Auth Login
+	googleLogin: async (idToken) => {
+		set({ loading: true });
+		try {
+			const res = await axios.post("/auth/google", { idToken });
+			set({ user: res.data, loading: false });
+			toast.success("Signed in with Google successfully!");
+			return { success: true };
+		} catch (error) {
+			set({ loading: false });
+			const message = error.response?.data?.message || "Google sign-in failed";
+			toast.error(message);
+			return { success: false, error: message };
+		}
+	},
+
+	// Update user profile
+	updateProfile: async (profileData) => {
+		set({ loading: true });
+		try {
+			const res = await axios.patch("/users/profile", profileData);
+			set({ user: res.data, loading: false });
+			toast.success("Profile updated successfully!");
+			return { success: true };
+		} catch (error) {
+			set({ loading: false });
+			toast.error(error.response?.data?.message || "Failed to update profile");
+			return { success: false };
+		}
+	},
+
+	// Upload profile picture
+	uploadProfilePicture: async (file) => {
+		set({ loading: true });
+		try {
+			const formData = new FormData();
+			formData.append("profilePicture", file);
+
+			const res = await axios.post("/users/profile-picture", formData, {
+				headers: { "Content-Type": "multipart/form-data" },
+			});
+
+			set({ user: res.data.user, loading: false });
+			toast.success("Profile picture updated!");
+			return { success: true, profilePicture: res.data.profilePicture };
+		} catch (error) {
+			set({ loading: false });
+			toast.error(error.response?.data?.message || "Failed to upload image");
+			return { success: false };
+		}
+	},
+
+	forgotPassword: async (email, captchaToken = null) => {
+		set({ loading: true, error: null });
+		try {
+			await axios.post('/auth/forgot-password', { email, captchaToken });
+			set({ loading: false });
+			toast.success("Password reset email sent!");
+		} catch (error) {
+			set({ loading: false });
+			toast.error(error.response?.data?.message || "An error occurred");
+		}
+	},
 
 
-resetPassword: async (token, newPassword) => {
-  set({ loading: true, error: null });
-  try {
-    const res = await axios.post(`/auth/reset-password/${token}`, { 
-      newPassword 
-    });
-    set({ loading: false });
-		toast.success("Password reset successful!");
-    return res.data; 
-  } catch (error) {
-    set({ loading: false });
-		toast.error(error.response?.data?.message || "Reset failed");
-    throw error.response?.data || error;
-  }
-},
+	resetPassword: async (token, newPassword) => {
+		set({ loading: true, error: null });
+		try {
+			const res = await axios.post(`/auth/reset-password/${token}`, {
+				newPassword
+			});
+			set({ loading: false });
+			toast.success("Password reset successful!");
+			return res.data;
+		} catch (error) {
+			set({ loading: false });
+			toast.error(error.response?.data?.message || "Reset failed");
+			throw error.response?.data || error;
+		}
+	},
 
 
 

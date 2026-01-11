@@ -1,18 +1,28 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LogIn, Mail, Lock, ArrowRight, Loader } from "lucide-react";
 import { useUserStore } from "../stores/useUserStore";
+import GoogleAuthButton from "../components/GoogleAuthButton";
+import useRecaptcha, { RecaptchaBadge } from "../hooks/useRecaptcha";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const { login, loading } = useUserStore();
+  const { executeRecaptcha, isConfigured } = useRecaptcha();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    login(email, password);
+
+    // Get reCAPTCHA token if configured
+    let captchaToken = null;
+    if (isConfigured) {
+      captchaToken = await executeRecaptcha('login');
+    }
+
+    login(email, password, captchaToken);
   };
 
   return (
@@ -136,6 +146,25 @@ const LoginPage = () => {
             </motion.button>
           </form>
 
+          {/* Google Auth Divider */}
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-600" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-800 text-gray-400">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            {/* Google Sign-In Button */}
+            <div className="mt-6">
+              <GoogleAuthButton onSuccess={() => window.location.href = "/"} />
+            </div>
+          </div>
+
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -160,6 +189,9 @@ const LoginPage = () => {
               </Link>
             </div>
           </div>
+
+          {/* reCAPTCHA Badge */}
+          <RecaptchaBadge />
         </div>
       </motion.div>
     </div>

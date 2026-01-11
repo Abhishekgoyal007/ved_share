@@ -40,6 +40,16 @@ const productSchema = new mongoose.Schema(
 			type: Boolean,
 			default: false,
 		},
+		tags: {
+			type: [String],
+			default: [],
+			validate: {
+				validator: function(v) {
+					return v.length <= 7;
+				},
+				message: 'Maximum 7 tags allowed'
+			}
+		},
 		swapOffers: [
 			{
 				offeredProductId: {

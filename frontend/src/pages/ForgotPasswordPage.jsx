@@ -3,16 +3,25 @@ import { Link } from "react-router-dom";
 import { Mail, ArrowLeft, Loader, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useUserStore } from "../stores/useUserStore";
+import useRecaptcha, { RecaptchaBadge } from "../hooks/useRecaptcha";
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const { loading, forgotPassword } = useUserStore();
+  const { executeRecaptcha, isConfigured } = useRecaptcha();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await forgotPassword(email);
+
+    // Get reCAPTCHA token if configured
+    let captchaToken = null;
+    if (isConfigured) {
+      captchaToken = await executeRecaptcha('forgot_password');
+    }
+
+    await forgotPassword(email, captchaToken);
     setIsSubmitted(true);
   };
 
@@ -102,6 +111,9 @@ const ForgotPasswordPage = () => {
               Login here <ArrowRight className="inline h-4 w-4" />
             </Link>
           </p>
+
+          {/* reCAPTCHA Badge */}
+          <RecaptchaBadge className="mt-4" />
         </div>
       </motion.div>
     </div>

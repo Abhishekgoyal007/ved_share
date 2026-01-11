@@ -92,7 +92,7 @@ export const getFeaturedProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
 	try {
-		const { name, description, price, image, category, pdf, isBookSwap } = req.body;
+		const { name, description, price, image, category, pdf, isBookSwap, tags } = req.body;
 
 		let cloudinaryResponse = null;
 		let cloudinaryPdfResponse = null;
@@ -116,6 +116,15 @@ export const createProduct = async (req, res) => {
 			});
 		}
 
+		// ---- PROCESS TAGS (max 7, trimmed, lowercase) ----
+		let processedTags = [];
+		if (tags && Array.isArray(tags)) {
+			processedTags = tags
+				.slice(0, 7)
+				.map(tag => tag.trim().toLowerCase())
+				.filter(tag => tag.length > 0);
+		}
+
 		// ---- CREATE PRODUCT ----
 		const product = await Product.create({
 			name,
@@ -125,12 +134,46 @@ export const createProduct = async (req, res) => {
 			pdfUrl: cloudinaryPdfResponse?.secure_url || "",
 			category,
 			isBookSwap: isBookSwap || false,
+			tags: processedTags,
 			userId: req.user._id,
 		});
 
 		res.status(201).json(product);
 	} catch (error) {
 		console.log("Error in createProduct controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+export const searchProducts = async (req, res) => {
+	try {
+		const { q } = req.query;
+
+		if (!q || q.trim().length === 0) {
+			return res.json({ products: [] });
+		}
+
+		const searchQuery = q.trim().toLowerCase();
+		const searchTerms = searchQuery.split(/\s+/).filter(term => term.length > 0);
+
+		// Build search conditions for each term
+		const searchConditions = searchTerms.map(term => ({
+			$or: [
+				{ name: { $regex: term, $options: 'i' } },
+				{ description: { $regex: term, $options: 'i' } },
+				{ tags: { $regex: term, $options: 'i' } },
+				{ category: { $regex: term, $options: 'i' } }
+			]
+		}));
+
+		// Products must match ALL search terms (AND condition)
+		const products = await Product.find({
+			$and: searchConditions
+		}).populate('userId', 'name email').limit(50);
+
+		res.json({ products });
+	} catch (error) {
+		console.log("Error in searchProducts controller", error.message);
 		res.status(500).json({ message: "Server error", error: error.message });
 	}
 };

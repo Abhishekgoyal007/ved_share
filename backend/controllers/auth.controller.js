@@ -3,6 +3,7 @@ import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import { sendOTPEmail, sendPasswordResetEmail } from "../lib/emailSender.js";
 import bcrypt from "bcryptjs";
+import { verifyFirebaseToken } from "../lib/firebase.js";
 
 const generateTokens = (userId) => {
 	const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, {
@@ -322,3 +323,70 @@ export const verifyPassword = async (req, res) => {
 	}
 };
 
+// Google Auth - Sign in or Sign up with Google
+export const googleAuth = async (req, res) => {
+	const { idToken } = req.body;
+
+	try {
+		if (!idToken) {
+			return res.status(400).json({ message: "No ID token provided" });
+		}
+
+		// Verify the Firebase ID token
+		const decodedToken = await verifyFirebaseToken(idToken);
+		const { email, name, picture, uid } = decodedToken;
+
+		if (!email) {
+			return res.status(400).json({ message: "Email not available from Google" });
+		}
+
+		// Check if user already exists
+		let user = await User.findOne({ email });
+
+		if (user) {
+			// User exists - link Google UID if not already linked
+			if (!user.googleUID) {
+				user.googleUID = uid;
+				user.isVerified = true; // Google accounts are pre-verified
+				await user.save();
+			}
+		} else {
+			// Create new user with Google data
+			user = await User.create({
+				name: name || email.split('@')[0],
+				email,
+				password: uid + Date.now().toString(), // Random password for Google users
+				googleUID: uid,
+				profilePicture: picture,
+				isVerified: true, // Google accounts are pre-verified
+			});
+		}
+
+		// Generate tokens and set cookies
+		const { accessToken, refreshToken } = generateTokens(user._id);
+		await storeRefreshToken(user._id, refreshToken);
+		setCookies(res, accessToken, refreshToken);
+
+		res.status(200).json({
+			_id: user._id,
+			name: user.name,
+			email: user.email,
+			role: user.role,
+			profilePicture: user.profilePicture,
+			isVerified: true,
+			authProvider: "google",
+		});
+	} catch (error) {
+		console.error("Google Auth error:", error);
+
+		// Handle specific Firebase errors
+		if (error.code === 'auth/id-token-expired') {
+			return res.status(401).json({ message: "Token expired, please try again" });
+		}
+		if (error.code === 'auth/invalid-id-token') {
+			return res.status(401).json({ message: "Invalid token" });
+		}
+
+		res.status(500).json({ message: "Google authentication failed", error: error.message });
+	}
+};

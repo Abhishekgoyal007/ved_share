@@ -1,0 +1,56 @@
+{
+    "name": "VedShare - Educational Marketplace",
+    "short_name": "VedShare",
+    "description": "Buy, sell, and share educational resources. A student marketplace for books, notes, and study materials.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#111827",
+    "theme_color": "#06b6d4",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/vs_logo.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/vs_logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "education",
+        "shopping",
+        "productivity"
+    ],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "short_name": "Dashboard",
+            "description": "View your dashboard",
+            "url": "/dashboard",
+            "icons": [
+                {
+                    "src": "/vs_logo.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Learning Desk",
+            "short_name": "Learn",
+            "description": "Access your learning tools",
+            "url": "/learning-desk",
+            "icons": [
+                {
+                    "src": "/vs_logo.png",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ]
+}

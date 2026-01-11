@@ -6,8 +6,28 @@ export const useProductStore = create((set) => ({
 	products: [],
 	loading: false,
 	pendingOffersCount: 0,
+	searchResults: [],
+	searchLoading: false,
 
 	setProducts: (products) => set({ products }),
+
+	searchProducts: async (query) => {
+		if (!query || query.trim().length === 0) {
+			set({ searchResults: [], searchLoading: false });
+			return;
+		}
+		set({ searchLoading: true });
+		try {
+			const response = await axios.get(`/products/search?q=${encodeURIComponent(query)}`);
+			set({ searchResults: response.data.products, searchLoading: false });
+		} catch (error) {
+			set({ searchResults: [], searchLoading: false });
+			console.error("Error searching products:", error);
+		}
+	},
+
+	clearSearchResults: () => set({ searchResults: [] }),
+
 	createProduct: async (productData) => {
 		set({ loading: true });
 		try {

@@ -1,13 +1,44 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/vs_logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VedShare</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="VedShare - Buy, sell, and share educational resources. A student marketplace for books, notes, and study materials." />
+    <meta name="keywords" content="education, marketplace, books, notes, study materials, students, learning" />
+    <meta name="author" content="VedShare Team" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#06b6d4" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="VedShare" />
+    <link rel="apple-touch-icon" href="/vs_logo.png" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <title>VedShare - Educational Marketplace</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('VedShare SW registered:', registration.scope);
+            })
+            .catch((error) => {
+              console.log('VedShare SW registration failed:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

@@ -132,6 +132,20 @@ const ProductDetailsPage = () => {
                             </p>
                         </div>
 
+                        {/* Tags Section */}
+                        {product.tags && product.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {product.tags.map((tag) => (
+                                    <span
+                                        key={tag}
+                                        className="px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/30 text-cyan-300 text-sm font-medium"
+                                    >
+                                        #{tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
                         {product.pdfUrl && (
                             <div className="mt-8">
                                 <h3 className="text-xl font-semibold text-white mb-4">Preview</h3>

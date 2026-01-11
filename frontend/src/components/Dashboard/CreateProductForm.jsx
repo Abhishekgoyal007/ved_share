@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { PlusCircle, Upload, Loader, Image as ImageIcon } from "lucide-react";
+import { PlusCircle, Upload, Loader, Image as ImageIcon, X, Tag } from "lucide-react";
 import { useProductStore } from "../../stores/useProductStore";
 
 const categories = [
@@ -21,9 +21,11 @@ const CreateProductForm = () => {
 		image: "",
 		pdf: "",
 		isBookSwap: false,
+		tags: [],
 	});
 	const [isFree, setIsFree] = useState(false);
 	const [isBookSwap, setIsBookSwap] = useState(false);
+	const [tagInput, setTagInput] = useState("");
 
 	const { createProduct, loading } = useProductStore();
 
@@ -47,13 +49,36 @@ const CreateProductForm = () => {
 		}
 	};
 
+	const handleAddTag = () => {
+		const tag = tagInput.trim().toLowerCase();
+		if (tag && newProduct.tags.length < 7 && !newProduct.tags.includes(tag)) {
+			setNewProduct({ ...newProduct, tags: [...newProduct.tags, tag] });
+			setTagInput("");
+		}
+	};
+
+	const handleRemoveTag = (tagToRemove) => {
+		setNewProduct({
+			...newProduct,
+			tags: newProduct.tags.filter(tag => tag !== tagToRemove)
+		});
+	};
+
+	const handleTagKeyDown = (e) => {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			handleAddTag();
+		}
+	};
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		try {
 			await createProduct(newProduct);
-			setNewProduct({ name: "", description: "", price: "", category: "", image: "", pdf: "", isBookSwap: false });
+			setNewProduct({ name: "", description: "", price: "", category: "", image: "", pdf: "", isBookSwap: false, tags: [] });
 			setIsFree(false);
 			setIsBookSwap(false);
+			setTagInput("");
 		} catch {
 			console.log("error creating a product");
 		}
@@ -224,6 +249,57 @@ const CreateProductForm = () => {
 							</div>
 						</div>
 					</div>
+				</div>
+
+				{/* Tags Section */}
+				<div className="mt-6">
+					<label className='block text-sm font-medium text-gray-300 mb-2'>
+						<Tag className="inline-block w-4 h-4 mr-1" />
+						Tags <span className="text-gray-500">(max 7 - helps with search)</span>
+					</label>
+					<div className="flex flex-wrap gap-2 mb-3">
+						{newProduct.tags.map((tag, index) => (
+							<motion.span
+								key={tag}
+								initial={{ opacity: 0, scale: 0.8 }}
+								animate={{ opacity: 1, scale: 1 }}
+								exit={{ opacity: 0, scale: 0.8 }}
+								className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/30 text-cyan-300 text-sm font-medium"
+							>
+								#{tag}
+								<button
+									type="button"
+									onClick={() => handleRemoveTag(tag)}
+									className="hover:text-red-400 transition-colors"
+								>
+									<X size={14} />
+								</button>
+							</motion.span>
+						))}
+					</div>
+					{newProduct.tags.length < 7 && (
+						<div className="flex gap-2">
+							<input
+								type="text"
+								value={tagInput}
+								onChange={(e) => setTagInput(e.target.value)}
+								onKeyDown={handleTagKeyDown}
+								className="flex-1 bg-gray-700/50 border border-gray-600 rounded-xl shadow-sm py-2.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
+								placeholder="Type a tag and press Enter..."
+								maxLength={30}
+							/>
+							<button
+								type="button"
+								onClick={handleAddTag}
+								className="px-4 py-2.5 bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 rounded-xl text-cyan-400 hover:from-cyan-600/50 hover:to-blue-600/50 transition-all duration-200 font-medium"
+							>
+								Add
+							</button>
+						</div>
+					)}
+					{newProduct.tags.length >= 7 && (
+						<p className="text-yellow-400 text-sm">Maximum 7 tags reached</p>
+					)}
 				</div>
 
 				{(newProduct.category === "etextbooks" || newProduct.category === "enotes") && (

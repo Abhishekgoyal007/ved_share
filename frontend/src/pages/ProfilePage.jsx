@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
 import { useUserStore } from "../stores/useUserStore";
-import { User, Mail, Shield, CheckCircle, XCircle, Package, ShoppingCart, IndianRupee, BookOpen, FileText } from "lucide-react";
-import { useEffect, useState } from "react";
+import { User, Mail, Shield, CheckCircle, XCircle, Package, ShoppingCart, IndianRupee, BookOpen, FileText, Camera, Loader, Pencil } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 import axios from "../lib/axios";
 
 const ProfilePage = () => {
-  const { user } = useUserStore();
+  const { user, uploadProfilePicture, updateProfile, loading: storeLoading } = useUserStore();
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalSales: 0,
@@ -17,6 +17,9 @@ const ProfilePage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [learningLoading, setLearningLoading] = useState(true);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState(user?.name || "");
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const fetchUserStats = async () => {
@@ -51,6 +54,35 @@ const ProfilePage = () => {
     fetchLearningStats();
   }, []);
 
+  const handleProfilePictureChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      return;
+    }
+
+    await uploadProfilePicture(file);
+  };
+
+  const handleNameUpdate = async () => {
+    if (!newName.trim() || newName === user?.name) {
+      setIsEditingName(false);
+      return;
+    }
+
+    const result = await updateProfile({ name: newName.trim() });
+    if (result.success) {
+      setIsEditingName(false);
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
@@ -70,13 +102,89 @@ const ProfilePage = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="flex items-center gap-6">
-            <div className="h-24 w-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-4xl">
-                {user.name?.charAt(0).toUpperCase() || "U"}
-              </span>
+            {/* Profile Picture with Upload */}
+            <div className="relative group">
+              <div className="h-24 w-24 rounded-full overflow-hidden shadow-lg ring-4 ring-gray-700">
+                {user.profilePicture ? (
+                  <img
+                    src={user.profilePicture}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                    <span className="text-white font-bold text-4xl">
+                      {user.name?.charAt(0).toUpperCase() || "U"}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Overlay */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={storeLoading}
+                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer"
+              >
+                {storeLoading ? (
+                  <Loader className="w-6 h-6 text-white animate-spin" />
+                ) : (
+                  <Camera className="w-6 h-6 text-white" />
+                )}
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleProfilePictureChange}
+                className="hidden"
+              />
             </div>
+
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white mb-2">{user.name}</h1>
+              {/* Editable Name */}
+              <div className="flex items-center gap-2 mb-2">
+                {isEditingName ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      className="text-2xl font-bold bg-gray-700 text-white px-3 py-1 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      onKeyDown={(e) => e.key === 'Enter' && handleNameUpdate()}
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleNameUpdate}
+                      disabled={storeLoading}
+                      className="px-3 py-1 bg-cyan-600 text-white rounded-lg text-sm hover:bg-cyan-500 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditingName(false);
+                        setNewName(user.name);
+                      }}
+                      className="px-3 py-1 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-500 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <h1 className="text-3xl font-bold text-white">{user.name}</h1>
+                    <button
+                      onClick={() => setIsEditingName(true)}
+                      className="p-1 text-gray-400 hover:text-cyan-400 transition-colors"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+
               <div className="flex items-center gap-2 text-gray-300 mb-2">
                 <Mail className="w-4 h-4" />
                 <span>{user.email}</span>

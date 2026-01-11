@@ -18,6 +18,23 @@ const ProductCard = ({ product }) => {
 						{product.name}
 					</h5>
 
+					{/* Tags */}
+					{product.tags && product.tags.length > 0 && (
+						<div className="flex flex-wrap gap-1 mb-3">
+							{product.tags.slice(0, 2).map((tag) => (
+								<span
+									key={tag}
+									className="px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-400"
+								>
+									#{tag}
+								</span>
+							))}
+							{product.tags.length > 2 && (
+								<span className="text-xs text-gray-500">+{product.tags.length - 2}</span>
+							)}
+						</div>
+					)}
+
 					<div className='mt-auto flex items-center justify-between gap-4'>
 						<p>
 							{product.price === 0 ? (

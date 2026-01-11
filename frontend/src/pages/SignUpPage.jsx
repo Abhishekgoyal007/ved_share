@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, Mail, Lock, User, ArrowRight, Loader } from "lucide-react";
 import { motion } from "framer-motion";
 import { useUserStore } from "../stores/useUserStore";
 import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
-import { useNavigate } from "react-router-dom";
+import GoogleAuthButton from "../components/GoogleAuthButton";
+import useRecaptcha, { RecaptchaBadge } from "../hooks/useRecaptcha";
 
 const SignUpPage = () => {
 	const [formData, setFormData] = useState({
@@ -17,11 +18,18 @@ const SignUpPage = () => {
 	const { password } = formData;
 	const { signup, loading } = useUserStore();
 	const navigate = useNavigate();
+	const { executeRecaptcha, isConfigured } = useRecaptcha();
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		try {
-			const result = await signup(formData);
+			// Get reCAPTCHA token if configured
+			let captchaToken = null;
+			if (isConfigured) {
+				captchaToken = await executeRecaptcha('signup');
+			}
+
+			const result = await signup({ ...formData, captchaToken });
 			if (result?.success) {
 				navigate('/verify-otp', { state: { fromSignup: true } });
 			}
@@ -181,6 +189,25 @@ const SignUpPage = () => {
 						</motion.button>
 					</form>
 
+					{/* Google Auth Divider */}
+					<div className="mt-6">
+						<div className="relative">
+							<div className="absolute inset-0 flex items-center">
+								<div className="w-full border-t border-gray-600" />
+							</div>
+							<div className="relative flex justify-center text-sm">
+								<span className="px-2 bg-gray-800 text-gray-400">
+									Or sign up with
+								</span>
+							</div>
+						</div>
+
+						{/* Google Sign-Up Button */}
+						<div className="mt-6">
+							<GoogleAuthButton onSuccess={() => window.location.href = "/"} />
+						</div>
+					</div>
+
 					<div className="mt-6">
 						<div className="relative">
 							<div className="absolute inset-0 flex items-center">
@@ -206,6 +233,9 @@ const SignUpPage = () => {
 							</Link>
 						</div>
 					</div>
+
+					{/* reCAPTCHA Badge */}
+					<RecaptchaBadge />
 				</div>
 			</motion.div>
 		</div>

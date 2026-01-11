@@ -13,13 +13,15 @@ import {
 	acceptSwapOffer,
 	rejectSwapOffer,
 	getSwapOffers,
-	getPendingOffersCount
+	getPendingOffersCount,
+	searchProducts
 } from "../controllers/product.controller.js";
 import { adminRoute, protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
 router.get("/", protectRoute, adminRoute, getAllProducts);
+router.get("/search", searchProducts); // Public search endpoint
 router.get("/my-products", protectRoute, getMyProducts);
 router.get("/featured", getFeaturedProducts);
 router.get("/category/:category", getProductsByCategory);
