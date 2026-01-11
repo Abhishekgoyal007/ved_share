@@ -81,7 +81,8 @@ app.use('/api/documents', documentRoutes);
 
 
 if (process.env.NODE_ENV === "production") {
-	app.use(express.static(path.join(__dirname, "/frontend/dist")));
+	// __dirname is the root of the project in ES modules with path.resolve()
+	app.use(express.static(path.join(__dirname, "frontend", "dist")));
 
 	app.get("*", (req, res) => {
 		res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
