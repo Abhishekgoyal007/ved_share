@@ -38,8 +38,9 @@ export const useProductStore = create((set) => ({
 			}));
 			toast.success("Product created successfully!");
 		} catch (error) {
-			toast.error(error.response.data.error);
 			set({ loading: false });
+			const errorMessage = error.response?.data?.error || error.message || "Failed to create product";
+			toast.error(errorMessage);
 		}
 	},
 	fetchAllProducts: async () => {
@@ -180,6 +181,25 @@ export const useProductStore = create((set) => ({
 			set({ pendingOffersCount: response.data.count });
 		} catch (error) {
 			console.error("Error fetching pending offers count:", error);
+		}
+	},
+
+	toggleProductSoldStatus: async (productId) => {
+		set({ loading: true });
+		try {
+			const response = await axios.patch(`/products/${productId}/toggle-sold`);
+			set((prevProducts) => ({
+				products: prevProducts.products.map((product) =>
+					product._id === productId ? { ...product, sold: response.data.sold } : product
+				),
+				loading: false,
+			}));
+			toast.success(
+				`Product marked as ${response.data.sold ? "sold" : "available"}`
+			);
+		} catch (error) {
+			set({ loading: false });
+			toast.error(error.response?.data?.error || "Failed to update product status");
 		}
 	},
 }));

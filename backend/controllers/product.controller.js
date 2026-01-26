@@ -4,7 +4,8 @@ import Product from "../models/product.model.js";
 
 export const getAllProducts = async (req, res) => {
 	try {
-		const products = await Product.find({}).populate('userId', 'name email'); // populate seller info
+		// Exclude sold products from public view
+		const products = await Product.find({ sold: false }).populate('userId', 'name email');
 		res.json({ products });
 	} catch (error) {
 		console.log("Error in getAllProducts controller", error.message);
@@ -92,10 +93,20 @@ export const getFeaturedProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
 	try {
-		const { name, description, price, image, category, pdf, isBookSwap, tags } = req.body;
+		const { name, description, price, image, category, pdf, isBookSwap, tags, images } = req.body;
+
+		// Validate required fields
+		if (!name || !description || !category) {
+			return res.status(400).json({ error: "Product name, description, and category are required" });
+		}
+
+		if (!image) {
+			return res.status(400).json({ error: "Product image is required" });
+		}
 
 		let cloudinaryResponse = null;
 		let cloudinaryPdfResponse = null;
+		let angleImages = {};
 
 		// ---- IMAGE UPLOAD (PUBLIC) ----
 		if (image) {
@@ -104,6 +115,25 @@ export const createProduct = async (req, res) => {
 				folder: "products",
 				type: "upload"
 			});
+		}
+
+		// ---- ANGLE IMAGES UPLOAD (PUBLIC) ----
+		if (images && typeof images === 'object') {
+			const angles = ['front', 'back', 'left', 'right'];
+			for (const angle of angles) {
+				if (images[angle]) {
+					try {
+						const response = await cloudinary.uploader.upload(images[angle], {
+							upload_preset: "jrjc35xt",
+							folder: `products/angles`,
+							type: "upload"
+						});
+						angleImages[angle] = response.secure_url;
+					} catch (error) {
+						console.log(`Error uploading ${angle} image:`, error.message);
+					}
+				}
+			}
 		}
 
 		// ---- PDF UPLOAD (PUBLIC) ----
@@ -125,16 +155,21 @@ export const createProduct = async (req, res) => {
 				.filter(tag => tag.length > 0);
 		}
 
+		// Generate serial number (timestamp + random string)
+		const serialNumber = `PROD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
 		// ---- CREATE PRODUCT ----
 		const product = await Product.create({
 			name,
 			description,
 			price,
 			image: cloudinaryResponse?.secure_url || "",
+			images: angleImages,
 			pdfUrl: cloudinaryPdfResponse?.secure_url || "",
 			category,
 			isBookSwap: isBookSwap || false,
 			tags: processedTags,
+			serialNumber,
 			userId: req.user._id,
 		});
 
@@ -166,9 +201,9 @@ export const searchProducts = async (req, res) => {
 			]
 		}));
 
-		// Products must match ALL search terms (AND condition)
+		// Products must match ALL search terms (AND condition) and not be sold
 		const products = await Product.find({
-			$and: searchConditions
+			$and: [...searchConditions, { sold: false }]
 		}).populate('userId', 'name email').limit(50);
 
 		res.json({ products });
@@ -242,11 +277,11 @@ export const getProductsByCategory = async (req, res) => {
 	try {
 		let products;
 		if (category === "book-swap") {
-			products = await Product.find({ isBookSwap: true });
+			products = await Product.find({ isBookSwap: true, sold: false });
 		} else if (category === "free-section") {
-			products = await Product.find({ price: 0 });
+			products = await Product.find({ price: 0, sold: false });
 		} else {
-			products = await Product.find({ category });
+			products = await Product.find({ category, sold: false });
 		}
 		res.json({ products });
 	} catch (error) {
@@ -268,6 +303,27 @@ export const toggleFeaturedProduct = async (req, res) => {
 		}
 	} catch (error) {
 		console.log("Error in toggleFeaturedProduct controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+export const toggleProductSoldStatus = async (req, res) => {
+	try {
+		const product = await Product.findById(req.params.id);
+		if (!product) {
+			return res.status(404).json({ error: "Product not found" });
+		}
+
+		const isOwner = product.userId.toString() === req.user._id.toString();
+		if (!isOwner) {
+			return res.status(403).json({ error: "You can only toggle sold status for your own products" });
+		}
+
+		product.sold = !product.sold;
+		const updatedProduct = await product.save();
+		res.json({ sold: updatedProduct.sold, message: `Product marked as ${updatedProduct.sold ? "sold" : "available"}` });
+	} catch (error) {
+		console.log("Error in toggleProductSoldStatus controller", error.message);
 		res.status(500).json({ message: "Server error", error: error.message });
 	}
 };

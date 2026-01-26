@@ -19,6 +19,12 @@ const CreateProductForm = () => {
 		price: "",
 		category: "",
 		image: "",
+		images: {
+			front: "",
+			back: "",
+			left: "",
+			right: ""
+		},
 		pdf: "",
 		isBookSwap: false,
 		tags: [],
@@ -75,12 +81,29 @@ const CreateProductForm = () => {
 		e.preventDefault();
 		try {
 			await createProduct(newProduct);
-			setNewProduct({ name: "", description: "", price: "", category: "", image: "", pdf: "", isBookSwap: false, tags: [] });
+			// Only clear form data on successful creation
+			setNewProduct({ 
+				name: "", 
+				description: "", 
+				price: "", 
+				category: "", 
+				image: "", 
+				images: {
+					front: "",
+					back: "",
+					left: "",
+					right: ""
+				},
+				pdf: "", 
+				isBookSwap: false, 
+				tags: [] 
+			});
 			setIsFree(false);
 			setIsBookSwap(false);
 			setTagInput("");
-		} catch {
-			console.log("error creating a product");
+		} catch (error) {
+			// On error, keep form data intact for user to fix and resubmit
+			console.log("error creating a product:", error);
 		}
 	};
 
@@ -91,6 +114,25 @@ const CreateProductForm = () => {
 
 			reader.onloadend = () => {
 				setNewProduct({ ...newProduct, image: reader.result });
+			};
+
+			reader.readAsDataURL(file); // base64
+		}
+	};
+
+	const handleAngleImageChange = (e, angle) => {
+		const file = e.target.files[0];
+		if (file) {
+			const reader = new FileReader();
+
+			reader.onloadend = () => {
+				setNewProduct({
+					...newProduct,
+					images: {
+						...newProduct.images,
+						[angle]: reader.result
+					}
+				});
 			};
 
 			reader.readAsDataURL(file); // base64
@@ -323,6 +365,44 @@ const CreateProductForm = () => {
 						</div>
 					</div>
 				)}
+
+				{/* Multiple Angle Images Section */}
+				<div className="mt-6">
+					<label className='block text-sm font-medium text-gray-300 mb-3'>
+						<ImageIcon className="inline-block w-4 h-4 mr-1" />
+						Additional Product Images <span className="text-gray-500">(Optional - Front, Back, Left, Right)</span>
+					</label>
+					<p className="text-xs text-gray-400 mb-4">Adding multiple angles increases probability of purchase</p>
+					<div className="grid grid-cols-2 gap-4">
+						{['front', 'back', 'left', 'right'].map((angle) => (
+							<div key={angle}>
+								<label className='block text-xs font-medium text-gray-400 mb-2 capitalize'>
+									{angle} View
+								</label>
+								<label
+									htmlFor={`image-${angle}`}
+									className='flex flex-col items-center justify-center w-full h-28 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700/30 hover:bg-gray-700/50 transition-colors duration-200 group overflow-hidden relative'
+								>
+									{newProduct.images[angle] ? (
+										<img src={newProduct.images[angle]} alt={`${angle} view`} className="w-full h-full object-cover" />
+									) : (
+										<div className='flex flex-col items-center justify-center'>
+											<Upload className='w-5 h-5 mb-1 text-gray-400 group-hover:text-cyan-400 transition-colors duration-200' />
+											<p className='text-xs text-gray-400 text-center px-2'>Click to upload</p>
+										</div>
+									)}
+									<input 
+										type='file' 
+										id={`image-${angle}`} 
+										className='hidden' 
+										accept='image/*' 
+										onChange={(e) => handleAngleImageChange(e, angle)} 
+									/>
+								</label>
+							</div>
+						))}
+					</div>
+				</div>
 
 				<button
 					type='submit'

@@ -7,6 +7,7 @@ import {
 	getProductsByCategory,
 	getRecommendedProducts,
 	toggleFeaturedProduct,
+	toggleProductSoldStatus,
 	getMyProducts,
 	getProductById,
 	createSwapOffer,
@@ -28,6 +29,7 @@ router.get("/category/:category", getProductsByCategory);
 router.get("/recommendations", getRecommendedProducts);
 router.post("/", protectRoute, createProduct); // Removed adminRoute to allow users to create products
 router.patch("/:id", protectRoute, adminRoute, toggleFeaturedProduct);
+router.patch("/:id/toggle-sold", protectRoute, toggleProductSoldStatus);
 router.get("/:id", getProductById);
 router.delete("/:id", protectRoute, deleteProduct);
 

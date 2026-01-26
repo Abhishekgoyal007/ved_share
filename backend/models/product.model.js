@@ -19,6 +19,24 @@ const productSchema = new mongoose.Schema(
 			type: String,
 			required: [true, "Image is required"],
 		},
+		images: {
+			front: {
+				type: String,
+				default: ""
+			},
+			back: {
+				type: String,
+				default: ""
+			},
+			left: {
+				type: String,
+				default: ""
+			},
+			right: {
+				type: String,
+				default: ""
+			}
+		},
 		category: {
 			type: String,
 			required: true,
@@ -49,6 +67,15 @@ const productSchema = new mongoose.Schema(
 				},
 				message: 'Maximum 7 tags allowed'
 			}
+		},
+		sold: {
+			type: Boolean,
+			default: false,
+		},
+		serialNumber: {
+			type: String,
+			unique: true,
+			sparse: true,
 		},
 		swapOffers: [
 			{

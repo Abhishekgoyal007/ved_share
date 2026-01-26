@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash, Package, RefreshCw, Check, X } from "lucide-react";
+import { Trash, Package, RefreshCw, Check, X, Tag } from "lucide-react";
 import { useProductStore } from "../../stores/useProductStore";
 
 const UserProductsList = () => {
-  const { deleteProduct, products, fetchMyProducts, fetchProductOffers, acceptSwapOffer, rejectSwapOffer } = useProductStore();
+  const { deleteProduct, products, fetchMyProducts, fetchProductOffers, acceptSwapOffer, rejectSwapOffer, toggleProductSoldStatus } = useProductStore();
   const [selectedProductOffers, setSelectedProductOffers] = useState(null);
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
   const [currentProductId, setCurrentProductId] = useState(null);
@@ -38,9 +38,13 @@ const UserProductsList = () => {
     }
   };
 
+  const handleToggleSold = (productId) => {
+    toggleProductSoldStatus(productId);
+  };
+
   return (
     <motion.div
-      className="bg-gray-800/60 backdrop-blur-md border border-gray-700/50 shadow-xl rounded-2xl overflow-hidden max-w-6xl mx-auto"
+      className="bg-gray-800/60 backdrop-blur-md border border-gray-700/50 shadow-xl rounded-2xl overflow-hidden max-w-7xl mx-auto"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8 }}
@@ -56,28 +60,40 @@ const UserProductsList = () => {
         <table className="min-w-full divide-y divide-gray-700/50">
           <thead className="bg-gray-800/50">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                S.No.
+              </th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Product
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Serial Number
+              </th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Price
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Category
               </th>
-              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-4 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-700/50 bg-transparent">
-            {products?.map((product) => (
-              <tr key={product._id} className="hover:bg-gray-700/30 transition-colors duration-200">
-                <td className="px-6 py-4 whitespace-nowrap">
+            {products?.map((product, index) => (
+              <tr key={product._id} className={`hover:bg-gray-700/30 transition-colors duration-200 ${product.sold ? "opacity-75" : ""}`}>
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <div className="text-sm font-semibold text-gray-400">{index + 1}</div>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-12 w-12 relative group">
                       <img
-                        className="h-12 w-12 rounded-xl object-cover border border-gray-700 shadow-sm group-hover:scale-110 transition-transform duration-200"
+                        className={`h-12 w-12 rounded-xl object-cover border border-gray-700 shadow-sm group-hover:scale-110 transition-transform duration-200 ${product.sold ? "grayscale" : ""}`}
                         src={product.image}
                         alt={product.name}
                       />
@@ -87,12 +103,17 @@ const UserProductsList = () => {
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <div className="text-xs font-mono text-gray-400 bg-gray-700/30 px-2 py-1 rounded">
+                    {product.serialNumber || "N/A"}
+                  </div>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-emerald-400">
                     {product.price === 0 ? "Free" : `₹${product.price.toFixed(2)}`}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-4 py-4 whitespace-nowrap">
                   <div className="flex flex-col gap-1">
                     <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 w-fit">
                       {product.category}
@@ -104,9 +125,21 @@ const UserProductsList = () => {
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <button
+                    onClick={() => handleToggleSold(product._id)}
+                    className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border cursor-pointer transition-all duration-200 hover:scale-105 ${
+                      product.sold
+                        ? "bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30"
+                        : "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
+                    }`}
+                  >
+                    {product.sold ? "Sold" : "Available"}
+                  </button>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end gap-2">
-                    {product.isBookSwap && (
+                    {product.isBookSwap && !product.sold && (
                       <button
                         onClick={() => handleViewOffers(product._id)}
                         className="text-purple-400 hover:text-purple-300 hover:bg-purple-400/10 p-2 rounded-lg transition-colors duration-200 relative"
