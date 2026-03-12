@@ -135,7 +135,6 @@ export const resendOtp = async (req, res) => {
 
 export const login = async (req, res) => {
 	try {
-		console.log("Login controller hit with body:", req.body);
 		const { email, password } = req.body;
 		const user = await User.findOne({ email });
 

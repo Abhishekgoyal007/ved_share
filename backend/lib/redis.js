@@ -4,56 +4,74 @@ import dotenv from "dotenv";
 dotenv.config();
 
 let redis;
+let redisGaveUp = false;
+
+const MAX_RETRY_ATTEMPTS = 3;
+
+const createDummyRedis = () => ({
+    get: async () => null,
+    set: async () => null,
+    del: async () => null,
+    on: () => { },
+    status: "disconnected",
+});
 
 if (process.env.UPSTASH_REDIS_URL) {
     try {
+        let errorLogged = false;
+
         const client = new Redis(process.env.UPSTASH_REDIS_URL, {
-            maxRetriesPerRequest: null, // Avoid error: "Reached the max retries per request limit"
+            maxRetriesPerRequest: null,
             retryStrategy(times) {
-                const delay = Math.min(times * 50, 2000);
-                return delay;
+                if (times > MAX_RETRY_ATTEMPTS) {
+                    // Stop retrying — give up and use fallback
+                    console.warn(`Redis: Failed to connect after ${MAX_RETRY_ATTEMPTS} attempts. Giving up — app will run without Redis.`);
+                    redisGaveUp = true;
+                    return null; // returning null stops ioredis from retrying
+                }
+                return Math.min(times * 200, 2000);
             },
+            lazyConnect: false,
         });
 
         client.on("error", (err) => {
-            console.error("Redis connection error:", err.message);
+            if (!errorLogged) {
+                console.error("Redis connection error:", err.message);
+                errorLogged = true;
+            }
         });
 
         client.on("connect", () => {
             console.log("redisDB Connected");
+            errorLogged = false; // reset so future disconnects are logged once
+            redisGaveUp = false;
         });
 
         // Wrap the client to handle commands gracefully when disconnected
         redis = {
             get: async (...args) => {
-                if (client.status !== "ready") return null;
+                if (redisGaveUp || client.status !== "ready") return null;
                 try { return await client.get(...args); } catch { return null; }
             },
             set: async (...args) => {
-                if (client.status !== "ready") return null;
+                if (redisGaveUp || client.status !== "ready") return null;
                 try { return await client.set(...args); } catch { return null; }
             },
             del: async (...args) => {
-                if (client.status !== "ready") return null;
+                if (redisGaveUp || client.status !== "ready") return null;
                 try { return await client.del(...args); } catch { return null; }
             },
             on: (...args) => client.on(...args),
         };
     } catch (error) {
         console.error("Failed to initialize Redis client:", error.message);
-        process.env.UPSTASH_REDIS_URL = null; // Force fallback
+        redis = null;
     }
 }
 
-if (!process.env.UPSTASH_REDIS_URL || !redis) {
-    console.warn("Redis is not available or failed to initialize. Using dummy fallback.");
-    redis = {
-        get: async () => null,
-        set: async () => null,
-        del: async () => null,
-        on: () => { },
-        status: "disconnected"
-    };
+if (!redis) {
+    console.warn("Redis is not available. Using in-memory fallback — app runs fine without it.");
+    redis = createDummyRedis();
 }
 
 export { redis };
