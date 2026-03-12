@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, FileText, X, Loader, Upload, Trash2, Image as ImageIcon, File } from "lucide-react";
+import { Lock, FileText, X, Loader, Upload, Trash2, Image as ImageIcon, File, AlertTriangle } from "lucide-react";
 import axios from "../../../lib/axios";
 import SecurePDFViewer from "../../SecurePDFViewer";
 import toast from "react-hot-toast";
@@ -40,6 +40,10 @@ const LibraryTab = () => {
     };
 
     const handleProductClick = (product) => {
+        if (!product.pdfUrl) {
+            toast.error("This product does not have an attached document.");
+            return;
+        }
         setSelectedProduct(product);
         setIsPasswordModalOpen(true);
         setPassword("");
@@ -244,7 +248,11 @@ const LibraryTab = () => {
                                             className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
                                         />
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Lock className="w-8 h-8 text-cyan-400" />
+                                            {product.pdfUrl ? (
+                                                <Lock className="w-8 h-8 text-cyan-400" />
+                                            ) : (
+                                                <AlertTriangle className="w-8 h-8 text-yellow-400" />
+                                            )}
                                         </div>
                                     </div>
                                     <h3 className="text-lg font-semibold text-white truncate">{product.name}</h3>

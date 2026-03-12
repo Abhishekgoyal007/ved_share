@@ -5,30 +5,54 @@ dotenv.config();
 
 let redis;
 
-try {
-    if (process.env.UPSTASH_REDIS_URL) {
-        redis = new Redis(process.env.UPSTASH_REDIS_URL);
-        redis.on('error', (err) => {
+if (process.env.UPSTASH_REDIS_URL) {
+    try {
+        const client = new Redis(process.env.UPSTASH_REDIS_URL, {
+            maxRetriesPerRequest: null, // Avoid error: "Reached the max retries per request limit"
+            retryStrategy(times) {
+                const delay = Math.min(times * 50, 2000);
+                return delay;
+            },
+        });
+
+        client.on("error", (err) => {
             console.error("Redis connection error:", err.message);
         });
-        console.log("redisDB Connected");
-    } else {
-        console.warn("UPSTASH_REDIS_URL is not defined. Redis features will be disabled.");
-        // Create a dummy redis object to prevent crashes in controllers
+
+        client.on("connect", () => {
+            console.log("redisDB Connected");
+        });
+
+        // Wrap the client to handle commands gracefully when disconnected
         redis = {
-            get: async () => null,
-            set: async () => null,
-            del: async () => null,
-            on: () => { },
+            get: async (...args) => {
+                if (client.status !== "ready") return null;
+                try { return await client.get(...args); } catch { return null; }
+            },
+            set: async (...args) => {
+                if (client.status !== "ready") return null;
+                try { return await client.set(...args); } catch { return null; }
+            },
+            del: async (...args) => {
+                if (client.status !== "ready") return null;
+                try { return await client.del(...args); } catch { return null; }
+            },
+            on: (...args) => client.on(...args),
         };
+    } catch (error) {
+        console.error("Failed to initialize Redis client:", error.message);
+        process.env.UPSTASH_REDIS_URL = null; // Force fallback
     }
-} catch (error) {
-    console.error("Failed to initialize Redis:", error.message);
+}
+
+if (!process.env.UPSTASH_REDIS_URL || !redis) {
+    console.warn("Redis is not available or failed to initialize. Using dummy fallback.");
     redis = {
         get: async () => null,
         set: async () => null,
         del: async () => null,
         on: () => { },
+        status: "disconnected"
     };
 }
 

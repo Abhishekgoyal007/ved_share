@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Trash, Star, Package } from "lucide-react";
 import { useProductStore } from "../../stores/useProductStore";
@@ -56,6 +57,12 @@ const GlobalProductsList = () => {
 							</th>
 							<th
 								scope='col'
+								className='px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider'
+							>
+								Status
+							</th>
+							<th
+								scope='col'
 								className='px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider'
 							>
 								Actions
@@ -65,12 +72,12 @@ const GlobalProductsList = () => {
 
 					<tbody className='divide-y divide-gray-700/50 bg-transparent'>
 						{products?.map((product) => (
-							<tr key={product._id} className='hover:bg-gray-700/30 transition-colors duration-200'>
+							<tr key={product._id} className={`hover:bg-gray-700/30 transition-colors duration-200 ${product.sold ? "opacity-75" : ""}`}>
 								<td className='px-6 py-4 whitespace-nowrap'>
-									<div className='flex items-center'>
-										<div className='flex-shrink-0 h-12 w-12 relative group'>
+									<Link to={`/product/${product._id}`} className='flex items-center group cursor-pointer'>
+										<div className='flex-shrink-0 h-12 w-12 relative'>
 											<img
-												className='h-12 w-12 rounded-xl object-cover border border-gray-700 shadow-sm group-hover:scale-110 transition-transform duration-200'
+												className={`h-12 w-12 rounded-xl object-cover border border-gray-700 shadow-sm group-hover:scale-110 transition-transform duration-200 ${product.sold ? "grayscale" : ""}`}
 												src={product.image}
 												alt={product.name}
 											/>
@@ -78,7 +85,7 @@ const GlobalProductsList = () => {
 										<div className='ml-4'>
 											<div className='text-sm font-semibold text-white group-hover:text-cyan-400 transition-colors'>{product.name}</div>
 										</div>
-									</div>
+									</Link>
 								</td>
 								<td className='px-6 py-4 whitespace-nowrap'>
 									<div className='text-sm font-medium text-emerald-400'>₹{product.price.toFixed(2)}</div>
@@ -102,13 +109,24 @@ const GlobalProductsList = () => {
 									<button
 										onClick={() => toggleFeaturedProduct(product._id)}
 										className={`p-2 rounded-lg transition-all duration-200 ${product.isFeatured
-												? "bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20"
-												: "bg-gray-700/50 text-gray-400 hover:bg-gray-700 hover:text-yellow-400"
+											? "bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20"
+											: "bg-gray-700/50 text-gray-400 hover:bg-gray-700 hover:text-yellow-400"
 											}`}
 										title={product.isFeatured ? "Remove from Featured" : "Add to Featured"}
 									>
 										<Star className={`h-5 w-5 ${product.isFeatured ? "fill-yellow-400" : ""}`} />
 									</button>
+								</td>
+								<td className='px-6 py-4 whitespace-nowrap'>
+									<span
+										className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${product.sold
+												? "bg-red-500/20 text-red-400 border-red-500/30"
+												: "bg-green-500/20 text-green-400 border-green-500/30"
+											}`}
+										title="Only the product owner can change this status"
+									>
+										{product.sold ? "Sold" : "Available"}
+									</span>
 								</td>
 								<td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
 									<button

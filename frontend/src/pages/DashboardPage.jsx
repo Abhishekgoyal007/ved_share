@@ -1,5 +1,6 @@
 // pages/DashboardPage.jsx
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   BarChart,
   PlusCircle,
@@ -22,11 +23,18 @@ import { useUserStore } from "../stores/useUserStore";
 import { useProductStore } from "../stores/useProductStore";
 
 const DashboardPage = () => {
-  const [activeTab, setActiveTab] = useState("analytics");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "analytics";
+
   const { user } = useUserStore();
   const isAdmin = user?.role === "admin";
 
   const { fetchAllProducts, fetchMyProducts } = useProductStore();
+
+  // Function to change tab (updates URL)
+  const setActiveTab = (tabId) => {
+    setSearchParams({ tab: tabId });
+  };
 
   useEffect(() => {
     if (isAdmin) {
@@ -46,9 +54,9 @@ const DashboardPage = () => {
     ...baseTabs,
     { id: "global-analytics", label: "Global Analytics", icon: Globe },
     { id: "all-products", label: "All Products", icon: PackageSearch },
-    { id: "users", label: "Users", icon: Users},
-    { id: "feedback", label: "User Feedback", icon: MessageCircle }, 
-    
+    { id: "users", label: "Users", icon: Users },
+    { id: "feedback", label: "User Feedback", icon: MessageCircle },
+
   ];
 
   const tabs = isAdmin ? adminTabs : baseTabs;
@@ -70,7 +78,7 @@ const DashboardPage = () => {
       case "feedback":
         return <FeedbackList />;
       default:
-        return null;
+        return <UserAnalyticsTab />;
     }
   };
 

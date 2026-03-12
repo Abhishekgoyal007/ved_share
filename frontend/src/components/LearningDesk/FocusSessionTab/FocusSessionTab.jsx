@@ -10,9 +10,9 @@ import FocusAnalytics from "./FocusAnalytics";
 
 const FocusSessionTab = () => {
     const {
-        sessions, currentIndex, isRunning, sessionStats,
+        sessions, currentIndex, isRunning, sessionStats, isLoading,
         addSession, removeSession, updateSession, reorderSessions,
-        setCurrentIndex, toggleTimer, resetTimer, setIsRunning
+        setCurrentIndex, toggleTimer, resetTimer, setIsRunning, fetchSessions
     } = useFocusStore();
 
     const [showAddForm, setShowAddForm] = useState(false);
@@ -23,6 +23,11 @@ const FocusSessionTab = () => {
     const timerRef = useRef(null);
     const currentSession = sessions[currentIndex] || {};
     const nextSession = sessions[currentIndex + 1];
+
+    // Fetch sessions from backend on mount
+    useEffect(() => {
+        fetchSessions();
+    }, [fetchSessions]);
 
     // Preset durations
     const presets = [

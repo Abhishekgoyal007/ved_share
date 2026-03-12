@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash, Package, RefreshCw, Check, X, Tag } from "lucide-react";
 import { useProductStore } from "../../stores/useProductStore";
@@ -90,8 +91,8 @@ const UserProductsList = () => {
                   <div className="text-sm font-semibold text-gray-400">{index + 1}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 h-12 w-12 relative group">
+                  <Link to={`/product/${product._id}`} className="flex items-center group cursor-pointer">
+                    <div className="flex-shrink-0 h-12 w-12 relative">
                       <img
                         className={`h-12 w-12 rounded-xl object-cover border border-gray-700 shadow-sm group-hover:scale-110 transition-transform duration-200 ${product.sold ? "grayscale" : ""}`}
                         src={product.image}
@@ -101,7 +102,7 @@ const UserProductsList = () => {
                     <div className="ml-4">
                       <div className="text-sm font-semibold text-white group-hover:text-cyan-400 transition-colors">{product.name}</div>
                     </div>
-                  </div>
+                  </Link>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-xs font-mono text-gray-400 bg-gray-700/30 px-2 py-1 rounded">
@@ -128,11 +129,10 @@ const UserProductsList = () => {
                 <td className="px-4 py-4 whitespace-nowrap">
                   <button
                     onClick={() => handleToggleSold(product._id)}
-                    className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border cursor-pointer transition-all duration-200 hover:scale-105 ${
-                      product.sold
+                    className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border cursor-pointer transition-all duration-200 hover:scale-105 ${product.sold
                         ? "bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30"
                         : "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
-                    }`}
+                      }`}
                   >
                     {product.sold ? "Sold" : "Available"}
                   </button>
@@ -227,7 +227,7 @@ const UserProductsList = () => {
                               </p>
                               <p className="text-xs text-gray-500 mt-1">
                                 Status: <span className={`font-medium ${offer.status === 'accepted' ? 'text-green-400' :
-                                    offer.status === 'rejected' ? 'text-red-400' : 'text-yellow-400'
+                                  offer.status === 'rejected' ? 'text-red-400' : 'text-yellow-400'
                                   }`}>{offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}</span>
                               </p>
                             </div>

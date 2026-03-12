@@ -1,76 +1,23 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import axios from "../lib/axios";
+import toast from "react-hot-toast";
 
 // Helper function to get date string (YYYY-MM-DD)
 const getDateString = (date = new Date()) => {
     return date.toISOString().split('T')[0];
 };
 
-// Helper function to calculate streaks
-const calculateStreaks = (sessionHistory) => {
-    if (!sessionHistory || sessionHistory.length === 0) {
-        return { currentStreak: 0, longestStreak: 0 };
-    }
-
-    // Get unique dates sorted in descending order
-    const uniqueDates = [...new Set(sessionHistory.map(s => s.date))].sort().reverse();
-
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let tempStreak = 0;
-
-    const today = getDateString();
-    const yesterday = getDateString(new Date(Date.now() - 86400000));
-
-    // Calculate current streak
-    for (let i = 0; i < uniqueDates.length; i++) {
-        const date = uniqueDates[i];
-
-        if (i === 0) {
-            // First date should be today or yesterday
-            if (date === today || date === yesterday) {
-                currentStreak = 1;
-                tempStreak = 1;
-            } else {
-                break; // Streak is broken
-            }
-        } else {
-            const prevDate = uniqueDates[i - 1];
-            const dayDiff = (new Date(prevDate) - new Date(date)) / 86400000;
-
-            if (dayDiff === 1) {
-                currentStreak++;
-                tempStreak++;
-            } else {
-                break;
-            }
-        }
-    }
-
-    // Calculate longest streak
-    tempStreak = 1;
-    for (let i = 0; i < uniqueDates.length - 1; i++) {
-        const dayDiff = (new Date(uniqueDates[i]) - new Date(uniqueDates[i + 1])) / 86400000;
-
-        if (dayDiff === 1) {
-            tempStreak++;
-            longestStreak = Math.max(longestStreak, tempStreak);
-        } else {
-            tempStreak = 1;
-        }
-    }
-    longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
-
-    return { currentStreak, longestStreak };
-};
-
 export const useFocusStore = create(
     persist(
         (set, get) => ({
+            // Queue state (local only - not synced)
             sessions: [],
             currentIndex: null,
             isRunning: false,
-            sessionHistory: [], // Array of { date, label, duration, timestamp }
+
+            // Session history and stats (synced with backend)
+            sessionHistory: [],
             sessionStats: {
                 totalSessions: 0,
                 totalMinutes: 0,
@@ -80,7 +27,32 @@ export const useFocusStore = create(
                 lastSessionDate: null,
             },
 
-            // Actions
+            // Loading states
+            isLoading: false,
+            isSynced: false,
+
+            // Fetch all sessions from backend
+            fetchSessions: async () => {
+                set({ isLoading: true });
+                try {
+                    const response = await axios.get('/focus');
+                    set({
+                        sessionHistory: response.data.sessions,
+                        sessionStats: response.data.stats,
+                        isSynced: true,
+                        isLoading: false,
+                    });
+                } catch (error) {
+                    console.error('Error fetching focus sessions:', error);
+                    set({ isLoading: false });
+                    // Don't show toast on auth errors (user not logged in)
+                    if (error.response?.status !== 401) {
+                        toast.error('Failed to sync focus sessions');
+                    }
+                }
+            },
+
+            // Queue management actions (local only)
             setSessions: (sessions) => set({ sessions }),
             addSession: (session) =>
                 set((state) => {
@@ -120,7 +92,6 @@ export const useFocusStore = create(
                     const [movedItem] = newSessions.splice(fromIndex, 1);
                     newSessions.splice(toIndex, 0, movedItem);
 
-                    // Adjust currentIndex if necessary
                     let newCurrentIndex = state.currentIndex;
                     if (state.currentIndex === fromIndex) {
                         newCurrentIndex = toIndex;
@@ -142,34 +113,46 @@ export const useFocusStore = create(
             toggleTimer: () => set((state) => ({ isRunning: !state.isRunning })),
             setIsRunning: (isRunning) => set({ isRunning }),
 
-            // Complete a session and record it in history
-            completeSession: (sessionLabel, sessionDuration) =>
+            // Complete a session and save to backend
+            completeSession: async (sessionLabel, sessionDuration) => {
+                const sessionData = {
+                    label: sessionLabel,
+                    duration: sessionDuration,
+                    date: getDateString(),
+                    timestamp: Date.now(),
+                };
+
+                // Optimistically update local state
                 set((state) => {
-                    const newHistory = [
-                        ...state.sessionHistory,
-                        {
-                            date: getDateString(),
-                            label: sessionLabel,
-                            duration: sessionDuration,
-                            timestamp: Date.now(),
-                        }
-                    ];
-
-                    const streaks = calculateStreaks(newHistory);
-                    const totalMinutes = state.sessionStats.totalMinutes + sessionDuration;
-
+                    const newHistory = [...state.sessionHistory, sessionData];
                     return {
                         sessionHistory: newHistory,
                         sessionStats: {
+                            ...state.sessionStats,
                             totalSessions: state.sessionStats.totalSessions + 1,
-                            totalMinutes,
-                            totalHours: Math.round(totalMinutes / 60 * 10) / 10,
-                            currentStreak: streaks.currentStreak,
-                            longestStreak: streaks.longestStreak,
+                            totalMinutes: state.sessionStats.totalMinutes + sessionDuration,
+                            totalHours: Math.round((state.sessionStats.totalMinutes + sessionDuration) / 60 * 10) / 10,
                             lastSessionDate: getDateString(),
                         }
                     };
-                }),
+                });
+
+                // Sync with backend
+                try {
+                    const response = await axios.post('/focus', sessionData);
+                    // Update with server response (accurate stats)
+                    set({
+                        sessionStats: response.data.stats,
+                    });
+                    toast.success('Session completed! 🎉');
+                } catch (error) {
+                    console.error('Error saving focus session:', error);
+                    // Don't revert local state - just show warning
+                    if (error.response?.status !== 401) {
+                        toast.error('Session saved locally. Will sync when online.');
+                    }
+                }
+            },
 
             tick: () =>
                 set((state) => {
@@ -244,7 +227,7 @@ export const useFocusStore = create(
                 currentIndex: state.currentIndex,
                 sessionStats: state.sessionStats,
                 sessionHistory: state.sessionHistory,
-            }), // Don't persist isRunning to avoid issues on reload
+            }),
         }
     )
 );

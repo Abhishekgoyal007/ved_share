@@ -175,7 +175,7 @@ export const getPurchasedProducts = async (req, res) => {
 			order.products.map((item) => item.product)
 		).filter((product, index, self) =>
 			// Filter out nulls (deleted products) and duplicates
-			product && product.pdfUrl && self.findIndex(p => p._id.toString() === product._id.toString()) === index
+			product && self.findIndex(p => p._id.toString() === product._id.toString()) === index
 		);
 
 		res.json(purchasedProducts);

@@ -3,7 +3,7 @@ import Interview from "../models/interview.model.js";
 
 export const generateQuestions = async (req, res) => {
     try {
-        const { title, description } = req.body;
+        const { title, description, context } = req.body;
 
         console.log("Generating questions for:", title);
         console.log("API Key present:", !!process.env.GEMINI_API_KEY);
@@ -16,8 +16,13 @@ export const generateQuestions = async (req, res) => {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-        const prompt = `Generate 10 most frequently asked interview questions for the following topic: "${title} - ${description}". 
-        Return the response ONLY as a valid JSON array of objects, where each object has a "question" field. 
+        let prompt = `Generate 10 most frequently asked interview questions for the following topic: "${title} - ${description}".`;
+
+        if (context) {
+            prompt += `\n\nAdditional Context (Resume/Job Description):\n"${context}"\n\nEnsure at least 5 questions are specifically tailored to the provided context/resume, asking about specific projects, skills, or experiences mentioned.`;
+        }
+
+        prompt += `\n\nReturn the response ONLY as a valid JSON array of objects, where each object has a "question" field. 
         Do not include any markdown formatting like \`\`\`json or \`\`\`. 
         Example format: [{"question": "What is X?"}, {"question": "Explain Y."}]`;
 

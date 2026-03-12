@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ArrowLeft, Save, Share2, Loader, FileText, Sparkles, Send, CheckCircle, XCircle, AlertCircle, Trash2 } from "lucide-react";
+import { Plus, ArrowLeft, Save, Share2, Loader, FileText, Sparkles, Send, CheckCircle, XCircle, AlertCircle, Trash2, Mic, MicOff, Volume2, VolumeX, UploadCloud } from "lucide-react";
 import axios from "../../../lib/axios";
 import toast from "react-hot-toast";
 
@@ -9,15 +9,90 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
     const [loading, setLoading] = useState(false);
     const [generating, setGenerating] = useState(false);
     const [view, setView] = useState("list"); // list, create, preview, detail
-    const [formData, setFormData] = useState({ title: "", description: "" });
+    const [formData, setFormData] = useState({ title: "", description: "", context: "" });
     const [generatedQuestions, setGeneratedQuestions] = useState([]);
     const [selectedQuiz, setSelectedQuiz] = useState(null);
     const [answering, setAnswering] = useState({}); // { questionId: boolean }
     const [userAnswers, setUserAnswers] = useState({}); // { questionId: string }
 
+    // Privacy: Voice Input State
+    const [isListening, setIsListening] = useState(false);
+    const [listeningQuestionId, setListeningQuestionId] = useState(null);
+    const recognitionRef = useRef(null);
+
     useEffect(() => {
         fetchQuizzes();
+        return () => {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+        };
     }, []);
+
+    // Speech Recognition Setup
+    const startListening = (questionId) => {
+        if (!('webkitSpeechRecognition' in window)) {
+            toast.error("Speech recognition is not supported in this browser.");
+            return;
+        }
+
+        if (isListening) {
+            stopListening();
+            return;
+        }
+
+        const recognition = new window.webkitSpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+            setIsListening(true);
+            setListeningQuestionId(questionId);
+        };
+
+        recognition.onresult = (event) => {
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                }
+            }
+            if (finalTranscript) {
+                setUserAnswers(prev => ({
+                    ...prev,
+                    [questionId]: (prev[questionId] || '') + ' ' + finalTranscript
+                }));
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error(event.error);
+            stopListening();
+        };
+
+        recognition.onend = () => {
+            // If we didn't manually stop, it might have timed out. 
+            // We'll leave isListening true if we want it to restart, but for now let's just stop UI.
+            // Actually, continuous mode should keep going. But if it stops:
+            if (isListening) {
+                // It stopped unexpectedly (silence), let's update UI
+                setIsListening(false);
+                setListeningQuestionId(null);
+            }
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+    };
+
+    const stopListening = () => {
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+            setIsListening(false);
+            setListeningQuestionId(null);
+        }
+    };
 
     useEffect(() => {
         if (initialData) {
@@ -46,7 +121,7 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
     const handleGenerate = async (e) => {
         e.preventDefault();
         if (!formData.title || !formData.description) {
-            toast.error("Please fill in all fields");
+            toast.error("Please fill in title and description");
             return;
         }
 
@@ -73,7 +148,7 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
             setQuizzes([res.data, ...quizzes]);
             toast.success("Quiz saved successfully!");
             setView("list");
-            setFormData({ title: "", description: "" });
+            setFormData({ title: "", description: "", context: "" });
             setGeneratedQuestions([]);
         } catch (error) {
             toast.error("Failed to save quiz");
@@ -150,6 +225,100 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
             }
         } catch (error) {
             toast.error("Failed to delete quiz");
+        }
+    };
+
+    // TTS State
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [speakingId, setSpeakingId] = useState(null); // questionId or 'feedback-'+questionId
+
+    // Resume Upload State
+    const fileInputRef = useRef(null);
+    const [parsingPdf, setParsingPdf] = useState(false);
+
+    // ... existing speech recognition code ...
+
+    // Text-to-Speech Setup
+    const speakText = (text, id) => {
+        if ('speechSynthesis' in window) {
+            // Cancel current speech
+            window.speechSynthesis.cancel();
+
+            if (isSpeaking && speakingId === id) {
+                setIsSpeaking(false);
+                setSpeakingId(null);
+                return;
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+
+            utterance.onstart = () => {
+                setIsSpeaking(true);
+                setSpeakingId(id);
+            };
+
+            utterance.onend = () => {
+                setIsSpeaking(false);
+                setSpeakingId(null);
+            };
+
+            utterance.onerror = () => {
+                setIsSpeaking(false);
+                setSpeakingId(null);
+                toast.error("Error playing audio");
+            };
+
+            window.speechSynthesis.speak(utterance);
+        } else {
+            toast.error("Text-to-speech not supported");
+        }
+    };
+
+    // PDF Resume Parsing
+    const handlePdfUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.type !== 'application/pdf') {
+            toast.error("Please upload a PDF file");
+            return;
+        }
+
+        try {
+            setParsingPdf(true);
+
+            // Dynamic import to avoid SSR issues if any, or just to be safe
+            const pdfjsLib = await import('pdfjs-dist/build/pdf');
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+            let fullText = "";
+
+            // Extract text from all pages
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + "\n";
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                context: (prev.context + "\n" + fullText).trim()
+            }));
+
+            toast.success("Resume parsed successfully!");
+        } catch (error) {
+            console.error("PDF Parsing Error:", error);
+            toast.error("Failed to read PDF. Please copy-paste text instead.");
+        } finally {
+            setParsingPdf(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
 
@@ -293,10 +462,52 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
                                         setFormData({ ...formData, description: e.target.value })
                                     }
                                     placeholder="Describe what you want to be asked about (e.g., 'Advanced React patterns, hooks, performance optimization, and state management')"
-                                    rows={4}
+                                    rows={3}
                                     className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all resize-none"
                                 />
                             </div>
+
+                            {/* New Context Input */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    <Sparkles className="inline-block w-4 h-4 mr-1 text-yellow-400" />
+                                    Paste Resume or Job Description (Optional)
+                                </label>
+                                <div className="relative">
+                                    <textarea
+                                        value={formData.context}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, context: e.target.value })
+                                        }
+                                        placeholder="Paste your resume or the job description here. The AI will tailor questions to this specific context."
+                                        rows={6}
+                                        className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all resize-none"
+                                    />
+                                    <div className="absolute top-3 right-3 flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={parsingPdf}
+                                            className="text-xs bg-gray-800 hover:bg-gray-700 text-cyan-400 px-3 py-1.5 rounded border border-gray-700 flex items-center gap-1 transition-colors"
+                                        >
+                                            {parsingPdf ? <Loader size={12} className="animate-spin" /> : <UploadCloud size={12} />}
+                                            Upload PDF
+                                        </button>
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            accept=".pdf"
+                                            onChange={handlePdfUpload}
+                                            className="hidden"
+                                        />
+                                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded border border-gray-700 flex items-center">AI Powered</span>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Tip: Uploading your resume helps the AI ask about your specific projects and experience.
+                                </p>
+                            </div>
+
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
@@ -441,7 +652,19 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
                                                     </span>
                                                 </div>
                                                 <div className="flex-grow">
-                                                    <p className="text-xl text-gray-100 font-medium leading-relaxed mb-6">{q.question}</p>
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <p className="text-xl text-gray-100 font-medium leading-relaxed">{q.question}</p>
+                                                        <button
+                                                            onClick={() => speakText(q.question, q._id)}
+                                                            className={`p-2 rounded-full transition-colors ${isSpeaking && speakingId === q._id
+                                                                ? "bg-emerald-500/20 text-emerald-400"
+                                                                : "bg-gray-700/30 text-gray-400 hover:text-white hover:bg-gray-700"
+                                                                }`}
+                                                            title="Read Question Aloud"
+                                                        >
+                                                            {isSpeaking && speakingId === q._id ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                                                        </button>
+                                                    </div>
 
                                                     <AnimatePresence mode="wait">
                                                         {q.feedback ? (
@@ -454,12 +677,24 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
                                                                         "bg-red-900/10 border-red-500/30"
                                                                     }`}
                                                             >
-                                                                <div className={`px-5 py-3 border-b flex items-center gap-3 font-semibold ${q.feedback.status === "Spot On" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
+                                                                <div className={`px-5 py-3 border-b flex items-center justify-between font-semibold ${q.feedback.status === "Spot On" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
                                                                     q.feedback.status === "Almost Correct" ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-400" :
                                                                         "bg-red-500/10 border-red-500/20 text-red-400"
                                                                     }`}>
-                                                                    {getFeedbackIcon(q.feedback.status)}
-                                                                    <span>{q.feedback.status}</span>
+                                                                    <div className="flex items-center gap-3">
+                                                                        {getFeedbackIcon(q.feedback.status)}
+                                                                        <span>{q.feedback.status}</span>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => speakText(q.feedback.message, `feedback-${q._id}`)}
+                                                                        className={`p-1.5 rounded-full transition-colors ${isSpeaking && speakingId === `feedback-${q._id}`
+                                                                            ? "bg-white/20 text-white"
+                                                                            : "hover:bg-white/10 text-white/70 hover:text-white"
+                                                                            }`}
+                                                                        title="Read Feedback Aloud"
+                                                                    >
+                                                                        {isSpeaking && speakingId === `feedback-${q._id}` ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                                                                    </button>
                                                                 </div>
 
                                                                 <div className="p-5 space-y-4">
@@ -480,13 +715,26 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
                                                                 animate={{ opacity: 1 }}
                                                                 className="space-y-4"
                                                             >
-                                                                <textarea
-                                                                    value={userAnswers[q._id] || ""}
-                                                                    onChange={(e) => setUserAnswers(prev => ({ ...prev, [q._id]: e.target.value }))}
-                                                                    placeholder="Type your answer here..."
-                                                                    className="w-full bg-gray-900/50 border border-gray-700 rounded-xl p-4 text-gray-200 placeholder-gray-600 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition-all resize-none text-base"
-                                                                    rows={4}
-                                                                />
+                                                                <div className="relative">
+                                                                    <textarea
+                                                                        value={userAnswers[q._id] || ""}
+                                                                        onChange={(e) => setUserAnswers(prev => ({ ...prev, [q._id]: e.target.value }))}
+                                                                        placeholder="Type or speak your answer here..."
+                                                                        className="w-full bg-gray-900/50 border border-gray-700 rounded-xl p-4 text-gray-200 placeholder-gray-600 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition-all resize-none text-base"
+                                                                        rows={4}
+                                                                    />
+                                                                    {/* Voice Input Button */}
+                                                                    <button
+                                                                        onClick={() => startListening(q._id)}
+                                                                        className={`absolute bottom-3 right-3 p-2 rounded-full transition-all ${isListening && listeningQuestionId === q._id
+                                                                            ? "bg-red-500/20 text-red-400 animate-pulse border border-red-500/50"
+                                                                            : "bg-gray-700/50 text-gray-400 hover:text-emerald-400 hover:bg-gray-700"
+                                                                            }`}
+                                                                        title="Speak your answer"
+                                                                    >
+                                                                        {isListening && listeningQuestionId === q._id ? <MicOff size={18} /> : <Mic size={18} />}
+                                                                    </button>
+                                                                </div>
                                                                 <div className="flex justify-end">
                                                                     <motion.button
                                                                         whileHover={{ scale: 1.02 }}

@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "../lib/axios";
 import { useCartStore } from "../stores/useCartStore";
@@ -12,13 +12,14 @@ import SecurePDFViewer from "../components/SecurePDFViewer";
 
 const ProductDetailsPage = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const { addToCart } = useCartStore();
-    const { createSwapOffer, fetchMyProducts, products: myProducts } = useProductStore(); // Added
-    const [isSwapModalOpen, setIsSwapModalOpen] = useState(false); // Added
-    const [selectedSwapProduct, setSelectedSwapProduct] = useState(null); // Added
+    const { createSwapOffer, fetchMyProducts, products: myProducts } = useProductStore();
+    const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+    const [selectedSwapProduct, setSelectedSwapProduct] = useState(null);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -74,13 +75,13 @@ const ProductDetailsPage = () => {
             </div>
 
             <div className='max-w-7xl mx-auto relative z-10'>
-                <Link
-                    to='/'
-                    className='inline-flex items-center text-gray-400 hover:text-cyan-400 mb-8 transition-colors'
+                <button
+                    onClick={() => navigate(-1)}
+                    className='inline-flex items-center text-gray-400 hover:text-cyan-400 mb-8 transition-colors cursor-pointer'
                 >
                     <ArrowLeft className='w-5 h-5 mr-2' />
-                    Back to Products
-                </Link>
+                    Back
+                </button>
 
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20'>
                     {/* Product Image */}

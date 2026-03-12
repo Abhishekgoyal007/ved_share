@@ -41,6 +41,8 @@ export const useProductStore = create((set) => ({
 			set({ loading: false });
 			const errorMessage = error.response?.data?.error || error.message || "Failed to create product";
 			toast.error(errorMessage);
+			// Re-throw the error so the form can catch it and preserve user input
+			throw error;
 		}
 	},
 	fetchAllProducts: async () => {
