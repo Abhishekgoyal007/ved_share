@@ -6,14 +6,15 @@ import fs from "fs";
 import PDFParser from "pdf2json";
 import mammoth from "mammoth";
 import { fileURLToPath } from "url";
+import os from "os";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configure multer for file upload
+// Configure multer for file upload to temporary directory (for Vercel serverless functions)
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
-		const uploadPath = path.join(__dirname, "../uploads");
+		const uploadPath = path.join(os.tmpdir(), "vedshare-uploads");
 		if (!fs.existsSync(uploadPath)) {
 			fs.mkdirSync(uploadPath, { recursive: true });
 		}

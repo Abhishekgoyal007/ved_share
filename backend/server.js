@@ -77,7 +77,7 @@ app.use('/api/focus', focusRoutes);
 
 
 
-if (process.env.NODE_ENV === "production") {
+if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
 	// __dirname is the root of the project in ES modules with path.resolve()
 	app.use(express.static(path.join(__dirname, "frontend", "dist")));
 
@@ -86,7 +86,16 @@ if (process.env.NODE_ENV === "production") {
 	});
 }
 
-app.listen(PORT, () => {
-	console.log("Server is running on http://localhost:" + PORT);
-	connectDB();
-});
+// Ensure database connects in serverless environments
+if (process.env.VERCEL) {
+    connectDB();
+}
+
+if (!process.env.VERCEL) {
+	app.listen(PORT, () => {
+		console.log("Server is running on http://localhost:" + PORT);
+		connectDB();
+	});
+}
+
+export default app;
