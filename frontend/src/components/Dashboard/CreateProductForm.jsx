@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { PlusCircle, Upload, Loader, Image as ImageIcon, X, Tag } from "lucide-react";
+import { PlusCircle, Upload, Loader, Image as ImageIcon, X, Tag, FileText } from "lucide-react";
 import { useProductStore } from "../../stores/useProductStore";
 
 const categories = [
@@ -19,18 +19,11 @@ const CreateProductForm = () => {
 		price: "",
 		category: "",
 		image: "",
-		images: {
-			front: "",
-			back: "",
-			left: "",
-			right: ""
-		},
+		images: { front: "", back: "", left: "", right: "" },
 		pdf: "",
-		isBookSwap: false,
 		tags: [],
 	});
 	const [isFree, setIsFree] = useState(false);
-	const [isBookSwap, setIsBookSwap] = useState(false);
 	const [tagInput, setTagInput] = useState("");
 
 	const { createProduct, loading } = useProductStore();
@@ -38,20 +31,9 @@ const CreateProductForm = () => {
 	const handleFreeToggle = (checked) => {
 		setIsFree(checked);
 		if (checked) {
-			setIsBookSwap(false);
-			setNewProduct({ ...newProduct, price: "0", isBookSwap: false });
+			setNewProduct({ ...newProduct, price: "0" });
 		} else {
 			setNewProduct({ ...newProduct, price: "" });
-		}
-	};
-
-	const handleBookSwapToggle = (checked) => {
-		setIsBookSwap(checked);
-		if (checked) {
-			setIsFree(false);
-			setNewProduct({ ...newProduct, price: "0", isBookSwap: true });
-		} else {
-			setNewProduct({ ...newProduct, price: "", isBookSwap: false });
 		}
 	};
 
@@ -70,39 +52,17 @@ const CreateProductForm = () => {
 		});
 	};
 
-	const handleTagKeyDown = (e) => {
-		if (e.key === 'Enter') {
-			e.preventDefault();
-			handleAddTag();
-		}
-	};
-
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		try {
 			await createProduct(newProduct);
-			// Only clear form data on successful creation
 			setNewProduct({ 
-				name: "", 
-				description: "", 
-				price: "", 
-				category: "", 
-				image: "", 
-				images: {
-					front: "",
-					back: "",
-					left: "",
-					right: ""
-				},
-				pdf: "", 
-				isBookSwap: false, 
-				tags: [] 
+				name: "", description: "", price: "", category: "", image: "", 
+				images: { front: "", back: "", left: "", right: "" },
+				pdf: "", tags: [] 
 			});
-			setIsFree(false);
-			setIsBookSwap(false);
-			setTagInput("");
+			setIsFree(false); setTagInput("");
 		} catch (error) {
-			// On error, keep form data intact for user to fix and resubmit
 			console.log("error creating a product:", error);
 		}
 	};
@@ -111,31 +71,8 @@ const CreateProductForm = () => {
 		const file = e.target.files[0];
 		if (file) {
 			const reader = new FileReader();
-
-			reader.onloadend = () => {
-				setNewProduct({ ...newProduct, image: reader.result });
-			};
-
-			reader.readAsDataURL(file); // base64
-		}
-	};
-
-	const handleAngleImageChange = (e, angle) => {
-		const file = e.target.files[0];
-		if (file) {
-			const reader = new FileReader();
-
-			reader.onloadend = () => {
-				setNewProduct({
-					...newProduct,
-					images: {
-						...newProduct.images,
-						[angle]: reader.result
-					}
-				});
-			};
-
-			reader.readAsDataURL(file); // base64
+			reader.onloadend = () => setNewProduct({ ...newProduct, image: reader.result });
+			reader.readAsDataURL(file);
 		}
 	};
 
@@ -143,288 +80,224 @@ const CreateProductForm = () => {
 		const file = e.target.files[0];
 		if (file) {
 			const reader = new FileReader();
+			reader.onloadend = () => setNewProduct({ ...newProduct, pdf: reader.result });
+			reader.readAsDataURL(file);
+		}
+	};
 
+	const handleAngleImageChange = (e, angle) => {
+		const file = e.target.files[0];
+		if (file) {
+			const reader = new FileReader();
 			reader.onloadend = () => {
-				setNewProduct({ ...newProduct, pdf: reader.result });
+				setNewProduct(prev => ({
+					...prev,
+					images: {
+						...prev.images,
+						[angle]: reader.result
+					}
+				}));
 			};
-
-			reader.readAsDataURL(file); // base64
+			reader.readAsDataURL(file);
 		}
 	};
 
 	return (
 		<motion.div
-			className='bg-gray-800/60 backdrop-blur-md border border-gray-700/50 shadow-xl rounded-2xl p-8 mb-8 max-w-2xl mx-auto'
+			className='max-w-4xl mx-auto'
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.8 }}
 		>
-			<h2 className='text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500'>
-				Create New Product
-			</h2>
-
-			<form onSubmit={handleSubmit} className='space-y-6'>
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-					<div className="space-y-6">
-						<div>
-							<label htmlFor='name' className='block text-sm font-medium text-gray-300 mb-2'>
-								Product Name
-							</label>
-							<input
-								type='text'
-								id='name'
-								name='name'
-								value={newProduct.name}
-								onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-								className='block w-full bg-gray-700/50 border border-gray-600 rounded-xl shadow-sm py-2.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200'
-								placeholder="e.g., Physics NCERT"
-								required
-							/>
+			<form onSubmit={handleSubmit} className='space-y-8'>
+				{/* Section 1: Basic Info */}
+				<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm">
+					<div className="flex items-center gap-3 mb-6">
+						<div className="p-2.5 bg-primary-100 dark:bg-primary-900/20 rounded-2xl text-primary-600">
+							<FileText size={20} />
 						</div>
-
-						<div>
-							<div className="flex items-center justify-between mb-2">
-								<label htmlFor='price' className='block text-sm font-medium text-gray-300'>
-									Price (₹)
-								</label>
-								<div className="flex items-center gap-4">
-									<div className="flex items-center">
-										<input
-											type="checkbox"
-											id="isFree"
-											checked={isFree}
-											onChange={(e) => handleFreeToggle(e.target.checked)}
-											className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
-										/>
-										<label htmlFor="isFree" className="ml-2 text-sm font-medium text-gray-300 cursor-pointer">
-											List for Free
-										</label>
-									</div>
-									<div className="flex items-center">
-										<input
-											type="checkbox"
-											id="isBookSwap"
-											checked={isBookSwap}
-											onChange={(e) => handleBookSwapToggle(e.target.checked)}
-											className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
-										/>
-										<label htmlFor="isBookSwap" className="ml-2 text-sm font-medium text-gray-300 cursor-pointer">
-											Book Swap
-										</label>
-									</div>
-								</div>
-							</div>
-							<input
-								type='number'
-								id='price'
-								name='price'
-								value={newProduct.price}
-								onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-								step='0.01'
-								className='block w-full bg-gray-700/50 border border-gray-600 rounded-xl shadow-sm py-2.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
-								placeholder="0.00"
-								required
-								disabled={isFree || isBookSwap}
-							/>
-						</div>
-
-						<div>
-							<label htmlFor='category' className='block text-sm font-medium text-gray-300 mb-2'>
-								Category
-							</label>
-							<select
-								id='category'
-								name='category'
-								value={newProduct.category}
-								onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-								className='block w-full bg-gray-700/50 border border-gray-600 rounded-xl shadow-sm py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200'
-								required
-							>
-								<option value=''>Select a category</option>
-								{categories.map((category) => (
-									<option key={category} value={category}>
-										{category.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}
-									</option>
-								))}
-							</select>
-						</div>
+						<h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Basic Information</h3>
 					</div>
-
-					<div className="space-y-6">
+					
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+						<div className="space-y-4">
+							<div>
+								<label className='block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3'>Resource Name</label>
+								<input
+									type='text'
+									value={newProduct.name}
+									onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+									className='w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 px-5 text-slate-900 dark:text-white focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500 transition-all outline-none'
+									placeholder="e.g., Organic Chemistry Vol. 1"
+									required
+								/>
+							</div>
+							<div>
+								<label className='block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3'>Category</label>
+								<select
+									value={newProduct.category}
+									onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+									className='w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 px-5 text-slate-900 dark:text-white focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500 transition-all outline-none cursor-pointer'
+									required
+								>
+									<option value=''>Select Category</option>
+									{categories.map((c) => (
+										<option key={c} value={c}>{c.replace(/-/g, ' ')}</option>
+									))}
+								</select>
+							</div>
+						</div>
 						<div>
-							<label htmlFor='description' className='block text-sm font-medium text-gray-300 mb-2'>
-								Description
-							</label>
+							<label className='block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3'>Description</label>
 							<textarea
-								id='description'
-								name='description'
 								value={newProduct.description}
 								onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-								rows='4'
-								className='block w-full bg-gray-700/50 border border-gray-600 rounded-xl shadow-sm py-2.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200 resize-none'
-								placeholder="Describe your product..."
+								rows='5'
+								className='w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 px-5 text-slate-900 dark:text-white focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500 transition-all outline-none resize-none'
+								placeholder="What makes this resource special? Mention condition, edition, etc."
 								required
 							/>
-						</div>
-
-						<div>
-							<label className='block text-sm font-medium text-gray-300 mb-2'>
-								Product Image
-							</label>
-							<div className="flex items-center justify-center w-full">
-								<label
-									htmlFor='image'
-									className='flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-xl cursor-pointer bg-gray-700/30 hover:bg-gray-700/50 transition-colors duration-200 group overflow-hidden relative'
-								>
-									{newProduct.image ? (
-										<img src={newProduct.image} alt="Preview" className="w-full h-full object-cover" />
-									) : (
-										<div className='flex flex-col items-center justify-center pt-5 pb-6'>
-											<Upload className='w-8 h-8 mb-3 text-gray-400 group-hover:text-cyan-400 transition-colors duration-200' />
-											<p className='text-sm text-gray-400 group-hover:text-gray-300'>
-												<span className='font-semibold'>Click to upload</span> or drag and drop
-											</p>
-										</div>
-									)}
-									<input type='file' id='image' className='hidden' accept='image/*' onChange={handleImageChange} />
-								</label>
-							</div>
 						</div>
 					</div>
 				</div>
 
-				{/* Tags Section */}
-				<div className="mt-6">
-					<label className='block text-sm font-medium text-gray-300 mb-2'>
-						<Tag className="inline-block w-4 h-4 mr-1" />
-						Tags <span className="text-gray-500">(max 7 - helps with search)</span>
-					</label>
-					<div className="flex flex-wrap gap-2 mb-3">
-						{newProduct.tags.map((tag, index) => (
-							<motion.span
-								key={tag}
-								initial={{ opacity: 0, scale: 0.8 }}
-								animate={{ opacity: 1, scale: 1 }}
-								exit={{ opacity: 0, scale: 0.8 }}
-								className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/30 text-cyan-300 text-sm font-medium"
-							>
-								#{tag}
-								<button
-									type="button"
-									onClick={() => handleRemoveTag(tag)}
-									className="hover:text-red-400 transition-colors"
-								>
-									<X size={14} />
-								</button>
-							</motion.span>
-						))}
+				{/* Section 2: Pricing & Metadata */}
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+					<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm">
+						<div className="flex items-center gap-3 mb-6">
+							<div className="p-2.5 bg-emerald-100 dark:bg-emerald-900/20 rounded-2xl text-emerald-600">
+								<Tag size={20} />
+							</div>
+							<h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Pricing</h3>
+						</div>
+						
+						<div className="space-y-6">
+							<div className="flex flex-wrap gap-4">
+								<label className="flex items-center gap-3 cursor-pointer group">
+									<input type="checkbox" checked={isFree} onChange={(e) => handleFreeToggle(e.target.checked)} className="hidden" />
+									<div className={`w-6 h-6 rounded-xl border-2 transition-all flex items-center justify-center ${isFree ? 'bg-primary-600 border-primary-600 shadow-lg shadow-primary-500/20' : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800'}`}>
+										{isFree && <div className="w-2 h-2 bg-white rounded-full shadow-sm" />}
+									</div>
+									<span className="text-sm font-bold text-slate-700 dark:text-slate-300">Mark as Free Listing</span>
+								</label>
+							</div>
+
+							<div>
+								<label className='block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3'>Price (INR)</label>
+								<div className="relative">
+									<span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+									<input
+										type='number'
+										value={newProduct.price}
+										onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+										className='w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 pl-10 pr-5 text-slate-900 dark:text-white focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500 transition-all outline-none disabled:opacity-30'
+										placeholder="0.00"
+										disabled={isFree}
+										required
+									/>
+								</div>
+							</div>
+						</div>
 					</div>
-					{newProduct.tags.length < 7 && (
-						<div className="flex gap-2">
+
+					<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm">
+						<div className="flex items-center gap-3 mb-6">
+							<div className="p-2.5 bg-purple-100 dark:bg-purple-900/20 rounded-2xl text-purple-600">
+								<PlusCircle size={20} />
+							</div>
+							<h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Tags</h3>
+						</div>
+						
+						<div className="space-y-4">
+							<div className="flex flex-wrap gap-2">
+								{newProduct.tags.map(tag => (
+									<span key={tag} className="px-4 py-1.5 bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-900/20 rounded-full text-[10px] font-black text-primary-600 uppercase tracking-widest flex items-center gap-2">
+										#{tag}
+										<button type="button" onClick={() => handleRemoveTag(tag)} className="hover:text-red-500 transition-colors"><X size={12}/></button>
+									</span>
+								))}
+							</div>
 							<input
 								type="text"
 								value={tagInput}
 								onChange={(e) => setTagInput(e.target.value)}
-								onKeyDown={handleTagKeyDown}
-								className="flex-1 bg-gray-700/50 border border-gray-600 rounded-xl shadow-sm py-2.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
-								placeholder="Type a tag and press Enter..."
-								maxLength={30}
+								onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddTag(); }}}
+								className='w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 px-5 text-slate-900 dark:text-white focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500 transition-all outline-none'
+								placeholder="Add search tags... (Enter)"
+								disabled={newProduct.tags.length >= 7}
 							/>
-							<button
-								type="button"
-								onClick={handleAddTag}
-								className="px-4 py-2.5 bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 rounded-xl text-cyan-400 hover:from-cyan-600/50 hover:to-blue-600/50 transition-all duration-200 font-medium"
-							>
-								Add
-							</button>
-						</div>
-					)}
-					{newProduct.tags.length >= 7 && (
-						<p className="text-yellow-400 text-sm">Maximum 7 tags reached</p>
-					)}
-				</div>
-
-				{(newProduct.category === "etextbooks" || newProduct.category === "enotes") && (
-					<div className="mt-6">
-						<label className='block text-sm font-medium text-gray-300 mb-2'>
-							Upload PDF
-						</label>
-						<div className="flex items-center justify-center w-full">
-							<label
-								htmlFor='pdf'
-								className='flex flex-col items-center justify-center w-full h-24 border-2 border-gray-600 border-dashed rounded-xl cursor-pointer bg-gray-700/30 hover:bg-gray-700/50 transition-colors duration-200 group'
-							>
-								<div className='flex flex-col items-center justify-center pt-5 pb-6'>
-									<Upload className='w-8 h-8 mb-3 text-gray-400 group-hover:text-cyan-400 transition-colors duration-200' />
-									<p className='text-sm text-gray-400 group-hover:text-gray-300'>
-										{newProduct.pdf ? "PDF Selected" : <><span className='font-semibold'>Click to upload PDF</span> or drag and drop</>}
-									</p>
-								</div>
-								<input type='file' id='pdf' className='hidden' accept='.pdf' onChange={handlePdfChange} />
-							</label>
 						</div>
 					</div>
-				)}
+				</div>
 
-				{/* Multiple Angle Images Section */}
-				<div className="mt-6">
-					<label className='block text-sm font-medium text-gray-300 mb-3'>
-						<ImageIcon className="inline-block w-4 h-4 mr-1" />
-						Additional Product Images <span className="text-gray-500">(Optional - Front, Back, Left, Right)</span>
-					</label>
-					<p className="text-xs text-gray-400 mb-4">Adding multiple angles increases probability of purchase</p>
-					<div className="grid grid-cols-2 gap-4">
-						{['front', 'back', 'left', 'right'].map((angle) => (
-							<div key={angle}>
-								<label className='block text-xs font-medium text-gray-400 mb-2 capitalize'>
-									{angle} View
-								</label>
-								<label
-									htmlFor={`image-${angle}`}
-									className='flex flex-col items-center justify-center w-full h-28 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700/30 hover:bg-gray-700/50 transition-colors duration-200 group overflow-hidden relative'
-								>
-									{newProduct.images[angle] ? (
-										<img src={newProduct.images[angle]} alt={`${angle} view`} className="w-full h-full object-cover" />
-									) : (
-										<div className='flex flex-col items-center justify-center'>
-											<Upload className='w-5 h-5 mb-1 text-gray-400 group-hover:text-cyan-400 transition-colors duration-200' />
-											<p className='text-xs text-gray-400 text-center px-2'>Click to upload</p>
-										</div>
-									)}
-									<input 
-										type='file' 
-										id={`image-${angle}`} 
-										className='hidden' 
-										accept='image/*' 
-										onChange={(e) => handleAngleImageChange(e, angle)} 
-									/>
-								</label>
+				{/* Section 3: Visuals */}
+				<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm">
+					<div className="flex items-center gap-3 mb-8">
+						<div className="p-2.5 bg-amber-100 dark:bg-amber-900/20 rounded-2xl text-amber-600">
+							<ImageIcon size={20} />
+						</div>
+						<h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Media & Document</h3>
+					</div>
+					
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+						<div>
+							<label className='block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4'>Main Cover Image</label>
+							<label className="relative block h-40 bg-white dark:bg-slate-950 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-[2rem] cursor-pointer hover:border-primary-500/50 transition-all overflow-hidden group mb-6">
+								{newProduct.image ? (
+									<img src={newProduct.image} alt="Preview" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+								) : (
+									<div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:text-primary-500 transition-colors">
+										<Upload size={32} className="mb-2" />
+										<span className="text-[10px] font-black uppercase tracking-widest">Select Cover Photo</span>
+									</div>
+								)}
+								<input type='file' className='hidden' accept='image/*' onChange={handleImageChange} />
+							</label>
+
+							<label className='block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3'>Condition Check (Angles)</label>
+							<div className="grid grid-cols-3 gap-3">
+								{['back', 'left', 'right'].map((angle) => (
+									<label key={angle} className="relative block aspect-square bg-slate-50 dark:bg-slate-950 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl cursor-pointer hover:border-primary-500/50 transition-all overflow-hidden group">
+										{newProduct.images?.[angle] ? (
+											<img src={newProduct.images[angle]} alt="Preview" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+										) : (
+											<div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:text-primary-500 transition-colors">
+												<Upload size={14} className="mb-1" />
+												<span className="text-[8px] font-black uppercase tracking-widest">{angle}</span>
+											</div>
+										)}
+										<input type='file' className='hidden' accept='image/*' onChange={(e) => handleAngleImageChange(e, angle)} />
+									</label>
+								))}
 							</div>
-						))}
+						</div>
+						<div className="flex flex-col justify-center gap-6">
+							<div className="bg-slate-50 dark:bg-slate-950 p-6 border border-slate-100 dark:border-slate-800 rounded-3xl">
+								<p className="text-[10px] text-slate-500 leading-relaxed font-bold uppercase tracking-widest">
+									💡 Premium Tip: High-fidelity scans and clear cover photos increase visibility by up to 60%.
+								</p>
+							</div>
+							{(newProduct.category === "etextbooks" || newProduct.category === "enotes") && (
+								<label className="flex items-center justify-center gap-3 w-full bg-slate-900 dark:bg-white text-white dark:text-slate-950 py-5 rounded-2xl font-black text-xs uppercase tracking-widest cursor-pointer hover:brightness-110 transition-all shadow-xl shadow-slate-900/10 active:scale-95">
+									<Upload size={20} />
+									{newProduct.pdf ? "Document Ready" : "Upload High-Quality PDF"}
+									<input type='file' className='hidden' accept='.pdf' onChange={handlePdfChange} />
+								</label>
+							)}
+						</div>
 					</div>
 				</div>
 
 				<button
 					type='submit'
-					className='w-full flex justify-center py-3 px-4 border border-transparent rounded-xl 
-					shadow-lg text-sm font-bold text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 
-					focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 transition-all duration-200 transform hover:scale-[1.02] mt-6'
 					disabled={loading}
+					className='w-full py-6 bg-primary-600 hover:bg-primary-500 text-white rounded-[2rem] font-black text-lg uppercase tracking-widest shadow-2xl shadow-primary-500/30 transition-all flex items-center justify-center gap-4 disabled:opacity-50 active:scale-[0.98]'
 				>
-					{loading ? (
-						<>
-							<Loader className='mr-2 h-5 w-5 animate-spin' aria-hidden='true' />
-							Creating Product...
-						</>
-					) : (
-						<>
-							<PlusCircle className='mr-2 h-5 w-5' />
-							Create Product
-						</>
-					)}
+					{loading ? <Loader className="animate-spin" /> : <PlusCircle size={26} />}
+					Broadcast Listing
 				</button>
 			</form>
 		</motion.div>
 	);
 };
+
 export default CreateProductForm;

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, Hand } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import CategoryItem from "../components/CategoryItem";
 import { useProductStore } from "../stores/useProductStore";
 import { useUserStore } from "../stores/useUserStore";
@@ -17,206 +17,196 @@ const categories = [
 ];
 
 const specialCategories = [
-	{ href: "/free-section", name: "Free Section", imageUrl: "/free-section.png" },
-	{ href: "/book-swap", name: "Book Swap", imageUrl: "/bookswap.jpg" },
+	{ href: "/category/free-section", name: "Free Section", imageUrl: "/free-section.png" },
 ];
 
 const HomePage = () => {
-	const { fetchFeaturedProducts, products, isLoading, pendingOffersCount, fetchPendingOffersCount } = useProductStore();
+	const { fetchFeaturedProducts, products, loading } = useProductStore();
 	const { user } = useUserStore();
 
 	useEffect(() => {
 		fetchFeaturedProducts();
-		if (user) fetchPendingOffersCount();
-	}, [fetchFeaturedProducts, fetchPendingOffersCount, user]);
+	}, [fetchFeaturedProducts]);
+
+	const containerVariants = {
+		hidden: { opacity: 0 },
+		visible: {
+			opacity: 1,
+			transition: {
+				staggerChildren: 0.1
+			}
+		}
+	};
+
+	const itemVariants = {
+		hidden: { opacity: 0, y: 20 },
+		visible: { opacity: 1, y: 0 }
+	};
 
 	return (
-		<div className="relative min-h-screen text-white overflow-hidden">
+		<div className="flex flex-col gap-20">
 			{/* Hero Section */}
-			<div className="relative bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 text-white min-h-screen flex items-center">
-				{/* Subtle gradient overlay */}
-				<div className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 via-transparent to-blue-900/10" />
+			<section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-32 px-4">
+				<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+					
+                    {/* Left Column: Text Content */}
+                    <div className="lg:col-span-7 flex flex-col items-start text-left">
+                        <motion.h1
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8 }}
+                            className="text-5xl md:text-7xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-6"
+                        >
+                            Knowledge Sharing <br />
+                            <span className="text-primary-600 dark:text-primary-500">Simplified for Everyone.</span>
+                        </motion.h1>
 
-				<div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between w-full py-20">
-					{/* Left side text */}
-					<div className="md:w-1/2 text-center md:text-left">
-						<motion.h1
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.8 }}
-							className="text-5xl sm:text-7xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent mb-6 flex items-center gap-4"
-						>
-							VedShare <BookOpen className="w-12 h-12 sm:w-16 sm:h-16 text-cyan-400" />
-						</motion.h1>
+                        <motion.p
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                            className="max-w-xl text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-10 leading-relaxed"
+                        >
+                            Buy or sell books and study materials with ease. Join a community of students making learning more affordable and accessible.
+                        </motion.p>
 
-						<motion.p
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 1, delay: 0.2 }}
-							className="text-xl sm:text-2xl text-gray-300 mb-8"
-						>
-							{user ? (
-								<span className="text-2xl sm:text-3xl flex items-center gap-2">
-									<Hand className="w-8 h-8 text-yellow-400 animate-wave" /> Welcome back, <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent font-semibold">{user.name}</span>!
-								</span>
-							) : (
-								<span className="leading-relaxed">
-									Buy, Sell & Learn — all in one platform.
-									<br />
-									<span className="text-gray-400 text-lg">Join thousands of students sharing knowledge</span>
-								</span>
-							)}
-						</motion.p>
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, delay: 0.4 }}
+                            className="flex flex-col sm:flex-row gap-4"
+                        >
+                            {!user ? (
+                                <>
+                                    <Link
+                                        to="/category/all"
+                                        className="px-8 py-4 rounded-full bg-primary-600 hover:bg-primary-500 text-white font-bold shadow-xl shadow-primary-500/25 transition-all flex items-center justify-center gap-2 group text-lg"
+                                    >
+                                        Browse Collection
+                                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                    </Link>
+                                    <Link
+                                        to="/login"
+                                        className="px-8 py-4 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-lg"
+                                    >
+                                        Log In
+                                    </Link>
+                                </>
+                            ) : (
+                                <div className="flex gap-4">
+                                    <Link
+                                        to="/category/all"
+                                        className="px-8 py-4 rounded-full bg-primary-600 hover:bg-primary-500 text-white font-bold shadow-xl shadow-primary-500/25 transition-all flex items-center justify-center gap-2 group text-lg"
+                                    >
+                                        Browse Collection
+                                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                    </Link>
+                                    <Link
+                                        to="/learning-desk"
+                                        className="px-8 py-4 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-lg"
+                                    >
+                                        Learning Desk
+                                    </Link>
+                                </div>
+                            )}
+                        </motion.div>
 
-						<motion.div
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 1, delay: 0.4 }}
-							className="flex flex-wrap justify-center md:justify-start gap-4"
-						>
-							{!user ? (
-								<>
-									<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-										<Link
-											to="/signup"
-											className="px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold shadow-lg transition-all duration-200 flex items-center gap-2"
-										>
-											Get Started
-											<ArrowRight size={20} />
-										</Link>
-									</motion.div>
-									<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-										<Link
-											to="/login"
-											className="px-8 py-4 rounded-xl border-2 border-cyan-500/50 text-cyan-400 font-semibold hover:bg-cyan-500/10 hover:border-cyan-400 transition-all duration-200 flex items-center gap-2"
-										>
-											Login
-											<ArrowRight size={20} />
-										</Link>
-									</motion.div>
-								</>
-							) : (
-								<>
-									<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-										<Link
-											to="/dashboard"
-											className="px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold shadow-lg transition-all duration-200 flex items-center gap-2 relative"
-										>
-											Dashboard
-											<ArrowRight size={20} />
-											{pendingOffersCount > 0 && (
-												<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
-													{pendingOffersCount}
-												</span>
-											)}
-										</Link>
-									</motion.div>
-									<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-										<Link
-											to="/learning-desk"
-											className="px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-semibold shadow-lg transition-all duration-200 flex items-center gap-2"
-										>
-											Learning Desk
-											<ArrowRight size={20} />
-										</Link>
-									</motion.div>
-								</>
-							)}
-						</motion.div>
-					</div>
+                    </div>
 
-					{/* Right side image */}
-					<motion.div
-						initial={{ opacity: 0, scale: 0.9 }}
-						animate={{ opacity: 1, scale: 1 }}
-						transition={{ duration: 1, delay: 0.3 }}
-						className="md:w-1/2 mt-16 md:mt-0 flex justify-center"
-					>
-						<div className="relative">
-							<img
-								src="/hero-image2.png"
-								alt="Books"
-								className="relative w-full max-w-2xl rounded-3xl shadow-2xl"
-							/>
-						</div>
-					</motion.div>
+                    <motion.div 
+                        initial={{ opacity: 0, x: 50, y: 0 }}
+                        animate={{ opacity: 1, x: 0, y: -40 }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                        className="lg:col-span-5 flex justify-center lg:justify-end"
+                    >
+                        <div className="relative group w-full max-w-[480px]">
+                            {/* Decorative background glow */}
+                            <div className="absolute -inset-10 bg-primary-500/10 dark:bg-primary-500/20 rounded-full blur-[100px] group-hover:bg-primary-500/30 transition-all duration-500" />
+                            
+                            <img 
+                                src="/headerimage.png" 
+                                alt="Knowledge Sharing" 
+                                className="relative w-full h-auto object-contain drop-shadow-[0_32px_64px_rgba(0,0,0,0.15)] hover:scale-[1.02] transition-transform duration-700" 
+                            />
+                        </div>
+                    </motion.div>
 				</div>
-			</div>
+			</section>
+
+			{/* Featured Products Section */}
+			{!loading && products.length > 0 && (
+				<section className="px-4">
+					<div className="max-w-7xl mx-auto">
+						<div className="flex items-end justify-between mb-10">
+							<div>
+								<h2 className="text-3xl font-bold dark:text-white mb-2 uppercase">Editor's Choice</h2>
+								<p className="text-slate-500 font-medium">Hand-picked resources recommended by our community.</p>
+							</div>
+							<Link to="/category/all" className="text-primary-600 font-semibold hover:underline flex items-center gap-1 text-sm uppercase">
+								View All <ArrowRight size={16} />
+							</Link>
+						</div>
+						<FeaturedProducts featuredProducts={products} />
+					</div>
+				</section>
+			)}
 
 			{/* Categories Section */}
-			<div className="relative z-10 bg-gray-900 py-20">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						whileInView={{ opacity: 1, y: 0 }}
-						viewport={{ once: true }}
-						transition={{ duration: 0.8 }}
-						className="text-center mb-16"
-					>
-						<h2 className="text-4xl sm:text-6xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-4">
-							Explore Our Categories
+			<section className="px-4 py-24 bg-slate-50 dark:bg-slate-900/30">
+				<div className="max-w-7xl mx-auto">
+					<div className="text-center mb-16">
+						<h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4 uppercase">
+							Browse by Category
 						</h2>
-						<p className="text-xl text-gray-400 max-w-2xl mx-auto">
-							Books Worth Sharing, Readers Worth Connecting!
-							<br />
-							<span className="text-gray-500">Buy and Sell Books without any hassle</span>
+						<p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium">
+							Find exactly what you need from our comprehensive collection of academic resources.
 						</p>
-					</motion.div>
+					</div>
 
 					<motion.div
-						initial={{ opacity: 0 }}
-						whileInView={{ opacity: 1 }}
+						variants={containerVariants}
+						initial="hidden"
+						whileInView="visible"
 						viewport={{ once: true }}
-						transition={{ duration: 0.8, delay: 0.2 }}
-						className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"
+						className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
 					>
-						{categories.map((category, index) => (
-							<motion.div
-								key={category.name}
-								initial={{ opacity: 0, y: 20 }}
-								whileInView={{ opacity: 1, y: 0 }}
-								viewport={{ once: true }}
-								transition={{ duration: 0.5, delay: index * 0.1 }}
-							>
+						{categories.map((category) => (
+							<motion.div key={category.name} variants={itemVariants}>
 								<CategoryItem category={category} />
 							</motion.div>
 						))}
 					</motion.div>
 
-					{/* Special Categories (Free & Book Swap) */}
-					<motion.div
-						initial={{ opacity: 0 }}
-						whileInView={{ opacity: 1 }}
-						viewport={{ once: true }}
-						transition={{ duration: 0.8, delay: 0.4 }}
-						className="grid grid-cols-1 md:grid-cols-2 gap-6"
-					>
-						{specialCategories.map((category, index) => (
-							<motion.div
+					{/* Special Section - Full Width */}
+					<div className="mt-8">
+						{specialCategories.map((category) => (
+							<motion.div 
 								key={category.name}
 								initial={{ opacity: 0, y: 20 }}
 								whileInView={{ opacity: 1, y: 0 }}
 								viewport={{ once: true }}
-								transition={{ duration: 0.5, delay: index * 0.1 }}
+								className="w-full h-80 relative group overflow-hidden rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none"
 							>
-								<CategoryItem category={category} />
+								<Link to={"/category" + category.href} className="block w-full h-full">
+									<img 
+										src={category.imageUrl} 
+										alt={category.name} 
+										className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-[0.7] group-hover:brightness-[0.8]" 
+									/>
+									<div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+									<div className="absolute bottom-10 left-10">
+										<h3 className="text-4xl font-black text-white tracking-tight mb-2">{category.name}</h3>
+										<p className="text-slate-200 font-medium">Access community-contributed resources at zero cost.</p>
+										<div className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 bg-white text-slate-950 rounded-full font-black text-xs uppercase tracking-widest group-hover:bg-primary-600 group-hover:text-white transition-all">
+											Explore Now <ArrowRight size={16} />
+										</div>
+									</div>
+								</Link>
 							</motion.div>
 						))}
-					</motion.div>
-
-					{!isLoading && products.length > 0 && (
-						<motion.div
-							initial={{ opacity: 0, y: 20 }}
-							whileInView={{ opacity: 1, y: 0 }}
-							viewport={{ once: true }}
-							transition={{ duration: 0.8 }}
-							className="mt-20"
-						>
-							<FeaturedProducts featuredProducts={products} />
-						</motion.div>
-					)}
+					</div>
 				</div>
-			</div>
+			</section>
 		</div>
 	);
 };

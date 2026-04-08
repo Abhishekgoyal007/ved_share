@@ -54,11 +54,19 @@ export const verifyCaptcha = async (req, res, next) => {
     }
 
     try {
+        // Use an AbortController to set a strict timeout for the captcha check
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout
+
         const response = await fetch(
             `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${captchaToken}`,
-            { method: "POST" }
+            { 
+                method: "POST",
+                signal: controller.signal
+            }
         );
 
+        clearTimeout(timeoutId);
         const data = await response.json();
 
         if (!data.success || data.score < 0.5) {
@@ -68,12 +76,11 @@ export const verifyCaptcha = async (req, res, next) => {
             });
         }
 
-        // Attach score to request for logging
         req.captchaScore = data.score;
         next();
     } catch (error) {
-        console.error("Captcha verification error:", error);
-        // In case of error, allow the request but log it
+        console.error("Captcha verification bypassed due to error/timeout:", error.name === 'AbortError' ? 'Timeout' : error.message);
+        // In case of error or timeout, allow the request to proceed to not block the user
         next();
     }
 };

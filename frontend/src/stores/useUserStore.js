@@ -175,11 +175,23 @@ export const useUserStore = create((set, get) => ({
 
 	checkAuth: async () => {
 		set({ checkingAuth: true });
+        
+        // Add a safety timeout to prevent infinite loading if server/redis is unresponsive
+        const timeoutId = setTimeout(() => {
+            const { checkingAuth } = get();
+            if (checkingAuth) {
+                console.warn("Auth check timed out, defaulting to guest state");
+                set({ checkingAuth: false, user: null });
+            }
+        }, 8000);
+
 		try {
 			const response = await axios.get("/auth/profile");
+            clearTimeout(timeoutId);
 			set({ user: response.data, checkingAuth: false });
 		} catch (error) {
-			console.log(error.message);
+            clearTimeout(timeoutId);
+			console.log("Auth check error:", error.message);
 			set({ checkingAuth: false, user: null });
 		}
 	},

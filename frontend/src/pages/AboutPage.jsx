@@ -1,78 +1,81 @@
 import React from "react";
+import { BookOpen, CheckCircle2, Globe, Users, Trophy } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function AboutPage() {
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12 text-gray-200">
-      <h1 className="text-4xl font-bold text-cyan-400 mb-6">About VedShare</h1>
-
-      <section className="mb-8">
-        <p className="text-gray-300 text-lg">
-          Welcome to <strong>VedShare</strong> — a unique space where knowledge meets community. The name says it all: <em>Ved</em> means knowledge, and <em>Share</em> is exactly that — sharing what you know and have.
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      {/* Hero Section */}
+      <div className="text-left mb-32">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="inline-flex items-center gap-3 px-4 py-1.5 bg-primary-50 dark:bg-primary-900/10 text-primary-600 dark:text-primary-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-primary-100 dark:border-primary-800"
+        >
+          <BookOpen size={14}/> The Mission
+        </motion.div>
+        <h1 className="text-6xl md:text-8xl font-black text-slate-900 dark:text-white tracking-tighter mb-10 leading-[0.9]">
+          Knowledge for <br/>
+          <span className="text-primary-600 italic">Every Student.</span>
+        </h1>
+        <p className="max-w-3xl text-slate-600 dark:text-slate-400 text-xl md:text-2xl leading-relaxed font-medium">
+          VedShare is a sophisticated academic ecosystem designed to dismantle the barriers of resource accessibility. We believe high-quality learning materials should be a shared asset, not a financial burden.
         </p>
-        <p className="text-gray-300 text-lg mt-3">
-          We’re part marketplace, part study buddy. Whether you’re looking to buy or sell secondhand textbooks or want a simple way to manage your study sessions, VedShare is built just for you.
-        </p>
-      </section>
+      </div>
 
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold text-cyan-300 mb-3">Buy & Sell Secondhand Books</h2>
-        <p className="text-gray-300 mb-3">
-          Textbooks can be expensive. That’s why we made it easy to resell the books you’re done with, and find affordable ones you need. It’s a win-win — save money, reduce waste, and keep the knowledge flowing.
-        </p>
-        <ul className="list-disc list-inside text-gray-300 space-y-1">
-          <li>Browse books by category or search to find exactly what you need.</li>
-          <li>List your own books for sale quickly and easily.</li>
-          <li>Keep track of your listings in your personal dashboard.</li>
-          <li>See featured books to catch popular or recommended picks.</li>
-        </ul>
-      </section>
+      {/* Modern Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-32">
+        {[
+            { icon: <Globe size={24} />, label: "Community Scale", value: "Pan-India Network", desc: "Connecting students across all major academic institutions." },
+            { icon: <Users size={24} />, label: "Student Verified", value: "10k+ Resources", desc: "A massive library of community-vetted study materials." },
+            { icon: <Trophy size={24} />, label: "Social Impact", value: "60% Cost Saving", desc: "Making premium education affordable for every aspiring learner." }
+        ].map((stat, i) => (
+            <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="group"
+            >
+                <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 mb-6 group-hover:scale-110 transition-transform w-fit">
+                    <div className="text-primary-600">{stat.icon}</div>
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">{stat.label}</p>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">{stat.value}</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed">{stat.desc}</p>
+            </motion.div>
+        ))}
+      </div>
 
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold text-cyan-300 mb-3">Your Personal Learning Desk</h2>
-        <p className="text-gray-300 mb-3">
-          Studying isn’t just about books — it’s about focus and routine. That’s why VedShare has a built-in study management tool to help you stay on track.
-        </p>
-        <ul className="list-disc list-inside text-gray-300 space-y-1">
-          <li>Use the Pomodoro timer to break your study time into focused sessions.</li>
-          <li>Add multiple timers for different tasks or subjects.</li>
-          <li>Pause, resume, or delete sessions whenever you want.</li>
-          <li>Track your progress visually with easy-to-read progress indicators.</li>
-        </ul>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold text-cyan-300 mb-3">Account & Security</h2>
-        <p className="text-gray-300 mb-3">
-          Your data and privacy matter. VedShare offers secure sign-up and login with OTP verification. Forgot your password? No worries, we got you covered with a simple reset process.
-        </p>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold text-cyan-300 mb-3">Why Choose VedShare?</h2>
-        <ul className="list-disc list-inside text-gray-300 space-y-1">
-          <li>Save money by buying and selling used textbooks.</li>
-          <li>Manage your study time and boost productivity.</li>
-          <li>Support sustainable learning — less waste, more sharing.</li>
-          <li>Join a community of students helping each other succeed.</li>
-        </ul>
-      </section>
-
-      <section>
-  <h2 className="text-2xl font-semibold text-cyan-300 mb-3">Research & Insights</h2>
-  <p className="text-gray-300 mb-3">
-    At VedShare, we believe in building on solid research. We’re proud to have contributed to this growing field with our paper:
-  </p>
-  <ul className="list-disc list-inside space-y-2 text-blue-400 underline">
-    <li>
-      <a href="https://your-research-paper-link.com" target="_blank" rel="noopener noreferrer">
-        <strong>"Sustainable Learning: The Role of Circular Economy in Student-Centered eCommerce"</strong>
-      </a>
-    </li>
-  </ul>
-  <p className="text-gray-300 mt-3">
-    This work explores how reusing resources like textbooks not only saves money but also supports a more sustainable and collaborative learning environment. It’s the foundation for how we built VedShare — to empower students through sharing and smart study habits.
-  </p>
-</section>
+      {/* Philosophy Section */}
+      <div className="bg-slate-900 dark:bg-white rounded-[3.5rem] p-12 md:p-24 text-white dark:text-slate-950 overflow-hidden relative">
+        <div className="absolute top-0 right-0 p-12 opacity-10">
+            <BookOpen size={400} />
+        </div>
+        
+        <div className="relative z-10 max-w-4xl">
+            <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-12">The VedShare <span className="text-primary-400 dark:text-primary-600">Standard.</span></h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                {[
+                    "Verified academic integrity in every listed resource.",
+                    "Direct student-to-student marketplace auditing.",
+                    "Decentralized knowledge distribution network.",
+                    "Eco-conscious circular reuse of physical textbooks.",
+                    "Industry-standard secure transaction protocols.",
+                    "Real-time resource tracking and verified delivery."
+                ].map((text, i) => (
+                    <div key={i} className="flex items-start gap-4">
+                        <CheckCircle2 className="text-primary-400 dark:text-primary-600 shrink-0 mt-1" size={20} />
+                        <span className="font-bold text-lg tracking-tight leading-tight">{text}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+      </div>
+      
+      <div className="text-center pt-24">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.6em]">© VedShare Intellectual Property Portfolio</p>
+      </div>
     </div>
   );
 }

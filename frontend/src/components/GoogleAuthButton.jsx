@@ -36,8 +36,10 @@ const GoogleAuthButton = ({ onSuccess, className = "" }) => {
                 toast.error("Network error. Please check your connection.");
             } else if (error.message?.includes("Firebase not configured")) {
                 toast.error("Google Sign-In is not configured");
+            } else if (error.code === "auth/unauthorized-domain") {
+                toast.error("Error: Domain not authorized in Firebase Console");
             } else {
-                toast.error("Failed to sign in with Google");
+                toast.error(error.message || "Failed to sign in with Google");
             }
         } finally {
             setLoading(false);

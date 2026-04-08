@@ -39,7 +39,6 @@ const LearningDeskPage = () => {
     { id: "library", label: "My Library", icon: BookOpen },
     { id: "interview", label: "AI Interview Prep", icon: Briefcase },
     { id: "keywords", label: "AI Keyword Extractor", icon: Sparkles },
-    { id: "calendar", label: "Study Calendar", icon: Calendar },
   ];
 
   const handleCreateQuizFromKeywords = (keywords) => {
@@ -65,8 +64,7 @@ const LearningDeskPage = () => {
         );
       case "keywords":
         return <KeywordExtractorTab onCreateQuiz={handleCreateQuizFromKeywords} />;
-      case "calendar":
-        return <div>Calendar Coming Soon...</div>;
+
       default:
         return null;
     }

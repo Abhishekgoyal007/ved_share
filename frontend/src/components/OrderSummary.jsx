@@ -1,7 +1,7 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "../stores/useCartStore";
 import { Link, useNavigate } from "react-router-dom";
-import { MoveRight, CreditCard, Smartphone } from "lucide-react";
+import { MoveRight, CreditCard, Smartphone, CheckCircle2 } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import axios from "../lib/axios";
 import { useState } from "react";
@@ -15,10 +15,9 @@ const OrderSummary = () => {
 	const { total, subtotal, coupon, isCouponApplied, cart } = useCartStore();
 	const navigate = useNavigate();
 
-	const savings = subtotal - total;
-	const formattedSubtotal = subtotal.toFixed(2);
-	const formattedTotal = total.toFixed(2);
-	const formattedSavings = savings.toFixed(2);
+	const savings = (subtotal || 0) - (total || 0);
+	const formattedSubtotal = (subtotal || 0).toLocaleString();
+	const formattedSavings = (savings || 0).toLocaleString();
 
 	const [paymentMethod, setPaymentMethod] = useState("stripe");
 	const [processing, setProcessing] = useState(false);
@@ -49,119 +48,103 @@ const OrderSummary = () => {
 				setProcessing(false);
 			}
 		} else {
-			// Navigate to the dedicated UPI Payment page
 			navigate("/upi-payment");
 		}
 	};
 
 	return (
 		<motion.div
-			className='space-y-4 rounded-xl border border-gray-700 bg-gray-800/50 backdrop-blur-sm p-4 shadow-lg sm:p-6'
+			className='bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/40 dark:shadow-none'
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.5 }}
 		>
-			<p className='text-xl font-bold text-white'>Order Summary</p>
-
-			<div className='space-y-4'>
-				<div className='space-y-2'>
-					<dl className='flex items-center justify-between gap-4'>
-						<dt className='text-base font-normal text-gray-300'>Original price</dt>
-						<dd className='text-base font-medium text-white'>₹{formattedSubtotal}</dd>
+			<div className="flex items-center gap-3 mb-8">
+                <div className="p-2.5 bg-primary-100 dark:bg-primary-900/20 rounded-2xl text-primary-600">
+                    <CheckCircle2 size={22} />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Order Summary</h3>
+            </div>
+ 
+			<div className='space-y-8'>
+				<div className='space-y-4 pb-8 border-b border-slate-100 dark:border-slate-800/50'>
+					<dl className='flex items-center justify-between'>
+						<dt className='text-[10px] font-black text-slate-400 uppercase tracking-widest'>Subtotal</dt>
+						<dd className='text-lg font-bold text-slate-900 dark:text-white'>₹{formattedSubtotal}</dd>
 					</dl>
-
+ 
 					{savings > 0 && (
-						<dl className='flex items-center justify-between gap-4'>
-							<dt className='text-base font-normal text-gray-300'>Savings</dt>
-							<dd className='text-base font-medium text-cyan-400'>-₹{formattedSavings}</dd>
+						<dl className='flex items-center justify-between'>
+							<dt className='text-[10px] font-black text-slate-400 uppercase tracking-widest'>Discount Applied</dt>
+							<dd className='text-lg font-bold text-emerald-500'>-₹{formattedSavings}</dd>
 						</dl>
 					)}
-
+ 
 					{coupon && isCouponApplied && (
-						<dl className='flex items-center justify-between gap-4'>
-							<dt className='text-base font-normal text-gray-300'>Coupon ({coupon.code})</dt>
-							<dd className='text-base font-medium text-cyan-400'>-{coupon.discountPercentage}%</dd>
-						</dl>
+						<div className="flex items-center justify-between bg-primary-50/50 dark:bg-primary-900/5 px-4 py-3 rounded-2xl border border-primary-100 dark:border-primary-900/20">
+							<span className='text-[10px] font-black text-primary-600 uppercase tracking-widest'>#{coupon.code}</span>
+							<span className='text-xs font-black text-primary-600'>-{coupon.discountPercentage}%</span>
+						</div>
 					)}
-					<dl className='flex items-center justify-between gap-4 border-t border-gray-700 pt-2'>
-						<dt className='text-base font-bold text-white'>Total</dt>
-						<dd className='text-base font-bold text-cyan-400'>₹{formattedTotal}</dd>
-					</dl>
 				</div>
-
+ 
+                <dl className='flex items-center justify-between'>
+                    <dt className='text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]'>Final Total</dt>
+                    <dd className='text-4xl font-black text-primary-600 tracking-tighter'>₹{(total || 0).toFixed(2)}</dd>
+                </dl>
+ 
 				{/* Payment Method Selection */}
-				<div className="pt-4 border-t border-gray-700">
-					<p className="text-sm font-medium text-gray-300 mb-3">Payment Method</p>
+				<div className="pt-2 space-y-4">
+					<p className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.2em] text-center">Secure Payment Protocol</p>
 					<div className="grid grid-cols-2 gap-3">
 						<button
 							onClick={() => setPaymentMethod("stripe")}
-							className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${paymentMethod === "stripe"
-								? "bg-cyan-500/10 border-cyan-500 text-cyan-400"
-								: "bg-gray-700/50 border-gray-600 text-gray-400 hover:bg-gray-700"
+							className={`flex flex-col items-center gap-2 p-5 rounded-[2rem] border-2 transition-all duration-300 ${paymentMethod === "stripe"
+								? "bg-primary-50 dark:bg-primary-900/10 border-primary-500 text-primary-600 scale-[1.02] shadow-lg shadow-primary-500/10"
+								: "bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-900 text-slate-400 hover:border-slate-200 opacity-60"
 								}`}
 						>
-							<CreditCard size={18} />
-							<span className="font-medium">Card</span>
+							<CreditCard size={20} />
+							<span className="text-[10px] font-black uppercase tracking-widest">Card</span>
 						</button>
 						<button
 							onClick={() => setPaymentMethod("upi")}
-							className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${paymentMethod === "upi"
-								? "bg-cyan-500/10 border-cyan-500 text-cyan-400"
-								: "bg-gray-700/50 border-gray-600 text-gray-400 hover:bg-gray-700"
+							className={`flex flex-col items-center gap-2 p-5 rounded-[2rem] border-2 transition-all duration-300 ${paymentMethod === "upi"
+								? "bg-primary-50 dark:bg-primary-900/10 border-primary-500 text-primary-600 scale-[1.02] shadow-lg shadow-primary-500/10"
+								: "bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-900 text-slate-400 hover:border-slate-200 opacity-60"
 								}`}
 						>
-							<Smartphone size={18} />
-							<span className="font-medium">UPI</span>
+							<Smartphone size={20} />
+							<span className="text-[10px] font-black uppercase tracking-widest">UPI</span>
 						</button>
 					</div>
 				</div>
-
-				{paymentMethod === "upi" && (
-					<motion.div
-						initial={{ opacity: 0, height: 0 }}
-						animate={{ opacity: 1, height: "auto" }}
-						className="bg-cyan-500/5 border border-cyan-500/20 p-4 rounded-xl"
-					>
-						<p className="text-sm text-cyan-300 text-center">
-							You'll be redirected to a secure UPI payment page with QR code and payment options.
-						</p>
-					</motion.div>
-				)}
-
-				<motion.button
-					className='flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-3 text-sm font-bold text-white hover:from-cyan-500 hover:to-blue-500 focus:outline-none focus:ring-4 focus:ring-cyan-900 shadow-lg shadow-cyan-900/20 disabled:opacity-50 disabled:cursor-not-allowed'
-					whileHover={{ scale: 1.02 }}
-					whileTap={{ scale: 0.98 }}
+ 
+				<button
+					className='w-full py-5 bg-primary-600 hover:bg-primary-500 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.25em] shadow-2xl shadow-primary-500/30 transition-all flex items-center justify-center gap-3 active:scale-[0.97] disabled:opacity-50 mt-4'
 					onClick={handlePayment}
 					disabled={processing}
 				>
 					{processing ? (
-						"Processing..."
-					) : paymentMethod === "stripe" ? (
-						<>
-							<CreditCard size={18} />
-							Proceed to Checkout
-						</>
+						<div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
 					) : (
 						<>
-							<Smartphone size={18} />
-							Pay with UPI
+							Authenticate Transaction
+							<MoveRight size={16} />
 						</>
 					)}
-				</motion.button>
-
-				<div className='flex items-center justify-center gap-2'>
-					<span className='text-sm font-normal text-gray-400'>or</span>
+				</button>
+ 
+				<div className='flex items-center justify-center pt-2'>
 					<Link
 						to='/'
-						className='inline-flex items-center gap-2 text-sm font-medium text-cyan-400 underline hover:text-cyan-300 hover:no-underline transition-colors'
+						className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-primary-600 transition-colors'
 					>
-						Continue Shopping
-						<MoveRight size={16} />
+						Explore Marketplace
 					</Link>
 				</div>
 			</div>
 		</motion.div>
 	);
 };
+
 export default OrderSummary;

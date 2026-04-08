@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ArrowLeft, Save, Share2, Loader, FileText, Sparkles, Send, CheckCircle, XCircle, AlertCircle, Trash2, Mic, MicOff, Volume2, VolumeX, UploadCloud } from "lucide-react";
+import { Plus, ArrowLeft, Save, Share2, Loader, FileText, Sparkles, Send, CheckCircle, XCircle, AlertCircle, Trash2, Mic, MicOff, Volume2, VolumeX, UploadCloud, Briefcase, Zap } from "lucide-react";
 import axios from "../../../lib/axios";
 import toast from "react-hot-toast";
 
@@ -12,10 +12,9 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
     const [formData, setFormData] = useState({ title: "", description: "", context: "" });
     const [generatedQuestions, setGeneratedQuestions] = useState([]);
     const [selectedQuiz, setSelectedQuiz] = useState(null);
-    const [answering, setAnswering] = useState({}); // { questionId: boolean }
-    const [userAnswers, setUserAnswers] = useState({}); // { questionId: string }
+    const [answering, setAnswering] = useState({});
+    const [userAnswers, setUserAnswers] = useState({});
 
-    // Privacy: Voice Input State
     const [isListening, setIsListening] = useState(false);
     const [listeningQuestionId, setListeningQuestionId] = useState(null);
     const recognitionRef = useRef(null);
@@ -29,7 +28,6 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
         };
     }, []);
 
-    // Speech Recognition Setup
     const startListening = (questionId) => {
         if (!('webkitSpeechRecognition' in window)) {
             toast.error("Speech recognition is not supported in this browser.");
@@ -66,17 +64,9 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
             }
         };
 
-        recognition.onerror = (event) => {
-            console.error(event.error);
-            stopListening();
-        };
-
+        recognition.onerror = () => stopListening();
         recognition.onend = () => {
-            // If we didn't manually stop, it might have timed out. 
-            // We'll leave isListening true if we want it to restart, but for now let's just stop UI.
-            // Actually, continuous mode should keep going. But if it stops:
             if (isListening) {
-                // It stopped unexpectedly (silence), let's update UI
                 setIsListening(false);
                 setListeningQuestionId(null);
             }
@@ -99,7 +89,7 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
             setFormData(prev => ({
                 ...prev,
                 description: initialData.description,
-                title: "Quiz from Keywords" // Optional default title
+                title: "Quiz from Keywords"
             }));
             setView("create");
             if (onDataConsumed) onDataConsumed();
@@ -140,10 +130,7 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
     const handleSave = async () => {
         try {
             setLoading(true);
-            const payload = {
-                ...formData,
-                questions: generatedQuestions,
-            };
+            const payload = { ...formData, questions: generatedQuestions };
             const res = await axios.post("/interview", payload);
             setQuizzes([res.data, ...quizzes]);
             toast.success("Quiz saved successfully!");
@@ -169,7 +156,6 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
             setGenerating(true);
             const res = await axios.post(`/interview/${selectedQuiz._id}/add-questions`);
             setSelectedQuiz(res.data);
-            // Update the quiz in the main list as well
             setQuizzes(quizzes.map(q => q._id === res.data._id ? res.data : q));
             toast.success("5 new questions added!");
         } catch (error) {
@@ -190,7 +176,6 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
                 userAnswer: answer
             });
 
-            // Update local state with feedback
             const updatedQuestions = selectedQuiz.questions.map(q => {
                 if (q._id === questionId) {
                     return { ...q, feedback: res.data.feedback, userAnswer: answer };
@@ -211,14 +196,11 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
     };
 
     const handleDelete = async (quizId) => {
-        if (!window.confirm("Are you sure you want to delete this quiz? This action cannot be undone.")) {
-            return;
-        }
-
+        if (!window.confirm("Are you sure?")) return;
         try {
             await axios.delete(`/interview/${quizId}`);
             setQuizzes(quizzes.filter(q => q._id !== quizId));
-            toast.success("Quiz deleted successfully!");
+            toast.success("Quiz deleted!");
             if (selectedQuiz?._id === quizId) {
                 setView("list");
                 setSelectedQuiz(null);
@@ -228,538 +210,284 @@ const InterviewPrepTab = ({ initialData, onDataConsumed }) => {
         }
     };
 
-    // TTS State
     const [isSpeaking, setIsSpeaking] = useState(false);
-    const [speakingId, setSpeakingId] = useState(null); // questionId or 'feedback-'+questionId
-
-    // Resume Upload State
+    const [speakingId, setSpeakingId] = useState(null);
     const fileInputRef = useRef(null);
     const [parsingPdf, setParsingPdf] = useState(false);
 
-    // ... existing speech recognition code ...
-
-    // Text-to-Speech Setup
     const speakText = (text, id) => {
         if ('speechSynthesis' in window) {
-            // Cancel current speech
             window.speechSynthesis.cancel();
-
             if (isSpeaking && speakingId === id) {
                 setIsSpeaking(false);
                 setSpeakingId(null);
                 return;
             }
-
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
-
-            utterance.onstart = () => {
-                setIsSpeaking(true);
-                setSpeakingId(id);
-            };
-
-            utterance.onend = () => {
-                setIsSpeaking(false);
-                setSpeakingId(null);
-            };
-
-            utterance.onerror = () => {
-                setIsSpeaking(false);
-                setSpeakingId(null);
-                toast.error("Error playing audio");
-            };
-
+            utterance.onstart = () => { setIsSpeaking(true); setSpeakingId(id); };
+            utterance.onend = () => { setIsSpeaking(false); setSpeakingId(null); };
             window.speechSynthesis.speak(utterance);
-        } else {
-            toast.error("Text-to-speech not supported");
         }
     };
 
-    // PDF Resume Parsing
     const handlePdfUpload = async (e) => {
         const file = e.target.files[0];
-        if (!file) return;
-
-        if (file.type !== 'application/pdf') {
-            toast.error("Please upload a PDF file");
-            return;
-        }
+        if (!file || file.type !== 'application/pdf') return;
 
         try {
             setParsingPdf(true);
-
-            // Dynamic import to avoid SSR issues if any, or just to be safe
             const pdfjsLib = await import('pdfjs-dist/build/pdf');
             pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
             let fullText = "";
-
-            // Extract text from all pages
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
-                fullText += pageText + "\n";
+                fullText += textContent.items.map(item => item.str).join(' ') + "\n";
             }
-
-            setFormData(prev => ({
-                ...prev,
-                context: (prev.context + "\n" + fullText).trim()
-            }));
-
-            toast.success("Resume parsed successfully!");
+            setFormData(prev => ({ ...prev, context: (prev.context + "\n" + fullText).trim() }));
+            toast.success("Resume parsed!");
         } catch (error) {
-            console.error("PDF Parsing Error:", error);
-            toast.error("Failed to read PDF. Please copy-paste text instead.");
+            toast.error("Failed to read PDF.");
         } finally {
             setParsingPdf(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
 
-    const getFeedbackColor = (status) => {
-        switch (status) {
-            case "Spot On": return "text-emerald-400 border-emerald-500/50 bg-emerald-500/10";
-            case "Almost Correct": return "text-yellow-400 border-yellow-500/50 bg-yellow-500/10";
-            case "Wrong": return "text-red-400 border-red-500/50 bg-red-500/10";
-            default: return "text-gray-400 border-gray-700 bg-gray-800";
-        }
-    };
-
-    const getFeedbackIcon = (status) => {
-        switch (status) {
-            case "Spot On": return <CheckCircle size={20} />;
-            case "Almost Correct": return <AlertCircle size={20} />;
-            case "Wrong": return <XCircle size={20} />;
-            default: return null;
-        }
-    };
-
     return (
-        <div className="p-6 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">
-                    AI Interview Prep
-                </h2>
+        <div className="max-w-6xl mx-auto space-y-10">
+            {/* Header Module */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                        <Briefcase size={12}/> Career Accelerator
+                    </div>
+                    <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">AI Interview Coach</h2>
+                    <p className="text-slate-500 font-medium mt-2">Generate tailored interview simulations based on your documents.</p>
+                </div>
                 {view === "list" && (
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setView("create")}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-lg transition-colors"
+                        className="flex items-center gap-3 px-8 py-4 bg-emerald-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-emerald-500/20 transition-all"
                     >
-                        <Plus size={20} />
-                        Create New Quiz
+                        <Plus size={18} /> New Coaching Session
                     </motion.button>
                 )}
             </div>
 
             <AnimatePresence mode="wait">
+                {/* Dashboard List */}
                 {view === "list" && (
                     <motion.div
                         key="list"
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                        exit={{ opacity: 0, y: -10 }}
+                        className={quizzes.length === 0 ? "flex flex-col items-center justify-center py-20" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"}
                     >
                         {loading ? (
                             <div className="col-span-full flex justify-center py-12">
-                                <Loader className="animate-spin text-emerald-500" size={40} />
+                                <Loader className="animate-spin text-emerald-600" size={40} />
                             </div>
                         ) : quizzes.length === 0 ? (
-                            <div className="col-span-full text-center py-12 text-gray-400">
-                                <FileText size={64} className="mx-auto mb-4 opacity-50" />
-                                <p className="text-xl">No quizzes yet. Create one to get started!</p>
-                            </div>
+                            <>
+                                <div className="p-8 bg-slate-100 dark:bg-slate-900 rounded-[3rem] mb-6 text-slate-300">
+                                    <Sparkles size={64} strokeWidth={1} />
+                                </div>
+                                <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">No active simulations</p>
+                            </>
                         ) : (
-                            quizzes.map((quiz) => (
+                            quizzes.map((q) => (
                                 <motion.div
-                                    key={quiz._id}
+                                    key={q._id}
                                     whileHover={{ y: -5 }}
-                                    className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-emerald-500/50 transition-colors group relative"
+                                    className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden"
+                                    onClick={() => { setSelectedQuiz(q); setView("detail"); }}
                                 >
-                                    <div
-                                        onClick={() => {
-                                            setSelectedQuiz(quiz);
-                                            setView("detail");
-                                        }}
-                                        className="cursor-pointer"
-                                    >
-                                        <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-emerald-400 transition-colors">
-                                            {quiz.title}
-                                        </h3>
-                                        <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                                            {quiz.description}
-                                        </p>
-                                        <div className="flex justify-between items-center text-xs text-gray-500">
-                                            <span>{new Date(quiz.createdAt).toLocaleDateString()}</span>
-                                            <span className="bg-gray-700 px-2 py-1 rounded text-gray-300">
-                                                {quiz.questions.length} Questions
-                                            </span>
+                                    <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+                                        <Briefcase size={140} strokeWidth={1} />
+                                    </div>
+                                    <div className="relative z-10 w-full h-full flex flex-col">
+                                        <h3 className="text-xl font-black text-slate-900 dark:text-white mb-3 group-hover:text-emerald-600 transition-colors uppercase tracking-tight line-clamp-1">{q.title}</h3>
+                                        <p className="text-slate-500 text-sm font-medium mb-6 line-clamp-2 flex-grow">{q.description}</p>
+                                        <div className="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-800 mt-auto">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(q.createdAt).toLocaleDateString()}</p>
+                                        <div className="flex items-center gap-2">
+                                            <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase">{q.questions.length} Qs</span>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleDelete(q._id); }} 
+                                                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                            >
+                                                <Trash2 size={14}/>
+                                            </button>
                                         </div>
                                     </div>
-
-                                    <motion.button
-                                        initial={{ opacity: 0 }}
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        className="absolute top-4 right-4 p-2 bg-red-600/80 hover:bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(quiz._id);
-                                        }}
-                                    >
-                                        <Trash2 size={16} />
-                                    </motion.button>
+                                    </div>
                                 </motion.div>
                             ))
                         )}
                     </motion.div>
                 )}
 
+                {/* Simulation Factory */}
                 {view === "create" && (
                     <motion.div
                         key="create"
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
-                        className="max-w-2xl mx-auto bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8"
+                        className="max-w-2xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3.5rem] p-12 shadow-2xl shadow-slate-200/50 dark:shadow-none"
                     >
-                        <button
-                            onClick={() => setView("list")}
-                            className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
-                        >
-                            <ArrowLeft size={20} /> Back to List
+                         <button onClick={() => setView("list")} className="flex items-center gap-2 text-slate-400 hover:text-slate-900 dark:hover:text-white mb-10 transition-all text-xs font-black uppercase tracking-widest">
+                            <ArrowLeft size={16} /> Dashboard
                         </button>
-
-                        <h3 className="text-2xl font-bold text-white mb-6">Create New Quiz</h3>
-                        <form onSubmit={handleGenerate} className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Quiz Title
-                                </label>
+                        <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-8 tracking-tight">Prime Simulation</h3>
+                        <form onSubmit={handleGenerate} className="space-y-8">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Title</label>
                                 <input
                                     type="text"
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    placeholder="e.g., React Senior Developer Interview"
-                                    className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                    placeholder="e.g. Google UX Challenge"
+                                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2rem] px-8 py-4 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Description / Topic
-                                </label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Focus Topics</label>
                                 <textarea
                                     value={formData.description}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, description: e.target.value })
-                                    }
-                                    placeholder="Describe what you want to be asked about (e.g., 'Advanced React patterns, hooks, performance optimization, and state management')"
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    placeholder="Advanced React Performance and UX"
                                     rows={3}
-                                    className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all resize-none"
+                                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2rem] px-8 py-4 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                                 />
                             </div>
-
-                            {/* New Context Input */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    <Sparkles className="inline-block w-4 h-4 mr-1 text-yellow-400" />
-                                    Paste Resume or Job Description (Optional)
-                                </label>
-                                <div className="relative">
-                                    <textarea
-                                        value={formData.context}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, context: e.target.value })
-                                        }
-                                        placeholder="Paste your resume or the job description here. The AI will tailor questions to this specific context."
-                                        rows={6}
-                                        className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all resize-none"
-                                    />
-                                    <div className="absolute top-3 right-3 flex gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => fileInputRef.current?.click()}
-                                            disabled={parsingPdf}
-                                            className="text-xs bg-gray-800 hover:bg-gray-700 text-cyan-400 px-3 py-1.5 rounded border border-gray-700 flex items-center gap-1 transition-colors"
-                                        >
-                                            {parsingPdf ? <Loader size={12} className="animate-spin" /> : <UploadCloud size={12} />}
-                                            Upload PDF
-                                        </button>
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            accept=".pdf"
-                                            onChange={handlePdfUpload}
-                                            className="hidden"
-                                        />
-                                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded border border-gray-700 flex items-center">AI Powered</span>
-                                    </div>
+                            <div className="space-y-2 relative">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Context / Resume</label>
+                                <textarea
+                                    value={formData.context}
+                                    onChange={(e) => setFormData({ ...formData, context: e.target.value })}
+                                    placeholder="Paste job details or resume data..."
+                                    rows={6}
+                                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2rem] px-8 py-4 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                                />
+                                <div className="absolute top-10 right-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={parsingPdf}
+                                        className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center gap-2"
+                                    >
+                                        {parsingPdf ? <Loader size={12} className="animate-spin" /> : <UploadCloud size={14} />}
+                                        Inject PDF
+                                    </button>
+                                    <input ref={fileInputRef} type="file" accept=".pdf" onChange={handlePdfUpload} className="hidden" />
                                 </div>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    Tip: Uploading your resume helps the AI ask about your specific projects and experience.
-                                </p>
                             </div>
-
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                type="submit"
+                            <button
                                 disabled={generating}
-                                className="w-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-semibold py-3 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                                type="submit"
+                                className="w-full py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3 transition-all"
                             >
-                                {generating ? (
-                                    <>
-                                        <Loader className="animate-spin" size={20} /> Generating...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Sparkles size={20} /> Generate Questions
-                                    </>
-                                )}
-                            </motion.button>
+                                {generating ? <Loader className="animate-spin" size={20} /> : <Zap size={20} />}
+                                {generating ? "Synthesizing Questions..." : "Commence Simulation"}
+                            </button>
                         </form>
                     </motion.div>
                 )}
 
-                {view === "preview" && (
-                    <motion.div
-                        key="preview"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="max-w-3xl mx-auto"
-                    >
-                        <div className="flex justify-between items-center mb-6">
-                            <button
-                                onClick={() => setView("create")}
-                                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-                            >
-                                <ArrowLeft size={20} /> Edit Details
-                            </button>
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={handleSave}
-                                disabled={loading}
-                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-lg transition-colors"
-                            >
-                                {loading ? <Loader className="animate-spin" size={20} /> : <Save size={20} />}
-                                Save Quiz
-                            </motion.button>
-                        </div>
-
-                        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8">
-                            <h3 className="text-2xl font-bold text-white mb-2">{formData.title}</h3>
-                            <p className="text-gray-400 mb-8">{formData.description}</p>
-
-                            <div className="space-y-4">
-                                {generatedQuestions.map((q, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="bg-gray-900/50 border border-gray-700/50 rounded-lg p-4"
-                                    >
-                                        <div className="flex gap-4">
-                                            <span className="flex-shrink-0 w-8 h-8 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center font-bold">
-                                                {idx + 1}
-                                            </span>
-                                            <p className="text-gray-200 mt-1">{q.question}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-
+                {/* Question Live Feed (Simulation View) */}
                 {view === "detail" && selectedQuiz && (
                     <motion.div
                         key="detail"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="max-w-4xl mx-auto"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="space-y-12"
                     >
-                        <div className="flex justify-between items-center mb-8">
-                            <button
-                                onClick={() => setView("list")}
-                                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
-                            >
-                                <div className="p-2 rounded-full bg-gray-800 group-hover:bg-gray-700 transition-colors">
-                                    <ArrowLeft size={20} />
-                                </div>
-                                <span className="font-medium">Back to List</span>
+                         <div className="flex justify-between items-center sm:bg-white dark:sm:bg-slate-900 sm:border border-slate-200 dark:border-slate-800 p-8 sm:rounded-[3.5rem]">
+                            <button onClick={() => setView("list")} className="flex items-center gap-3 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-black uppercase tracking-widest">
+                                <ArrowLeft size={18} /> Exit Simulation
                             </button>
-                            <div className="flex gap-3">
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={handleAddMoreQuestions}
-                                    disabled={generating || selectedQuiz.questions.length >= 50}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl shadow-lg shadow-cyan-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                                >
-                                    {generating ? <Loader className="animate-spin" size={18} /> : <Plus size={18} />}
-                                    Add Questions
-                                </motion.button>
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => handleShare(selectedQuiz._id)}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 hover:border-gray-600 rounded-xl transition-all font-medium"
-                                >
-                                    <Share2 size={18} />
-                                    Share
-                                </motion.button>
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => handleDelete(selectedQuiz._id)}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-red-600/80 hover:bg-red-500 text-white rounded-xl transition-all font-medium"
-                                >
-                                    <Trash2 size={18} />
-                                    Delete
-                                </motion.button>
+                            <div className="flex gap-4">
+                                <button onClick={() => handleShare(selectedQuiz._id)} className="p-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-3xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"><Share2 size={20}/></button>
+                                <button onClick={handleAddMoreQuestions} disabled={generating} className="px-8 py-3 bg-primary-600 text-white rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary-500/20 flex items-center gap-3 transition-all">
+                                    {generating ? <Loader className="animate-spin" size={14} /> : <Plus size={14} />}
+                                    Expand
+                                </button>
                             </div>
                         </div>
 
-                        <div className="space-y-8">
-                            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-8 shadow-xl">
-                                <h3 className="text-3xl font-bold text-white mb-3 tracking-tight">{selectedQuiz.title}</h3>
-                                <p className="text-gray-400 text-lg leading-relaxed">{selectedQuiz.description}</p>
-                            </div>
+                        <div className="space-y-10">
+                            {selectedQuiz.questions.map((q, idx) => (
+                                <motion.div
+                                    key={q._id}
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3.5rem] p-10 md:p-14 shadow-sm relative group overflow-hidden"
+                                >
+                                    <div className="absolute -top-10 -left-10 w-40 h-40 bg-slate-50 dark:bg-slate-950 rounded-full flex items-center justify-center -rotate-12 group-hover:rotate-0 transition-transform">
+                                        <span className="text-4xl font-black text-slate-200 dark:text-slate-800">{idx + 1}</span>
+                                    </div>
+                                    
+                                    <div className="relative z-10 flex flex-col gap-10">
+                                        <div className="flex justify-between items-start gap-6">
+                                            <h4 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">{q.question}</h4>
+                                            <button onClick={() => speakText(q.question, q._id)} className={`p-4 rounded-3xl transition-all ${speakingId === q._id ? "bg-primary-600 text-white scale-110" : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
+                                                {speakingId === q._id ? <VolumeX size={24} /> : <Volume2 size={24} />}
+                                            </button>
+                                        </div>
 
-                            <div className="space-y-6">
-                                {selectedQuiz.questions.map((q, idx) => (
-                                    <motion.div
-                                        key={q._id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.1 }}
-                                        className="bg-gray-800/40 backdrop-blur-md border border-gray-700/50 rounded-2xl overflow-hidden hover:border-gray-600/50 transition-colors"
-                                    >
-                                        <div className="p-6 md:p-8">
-                                            <div className="flex gap-5">
-                                                <div className="flex-shrink-0">
-                                                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 text-emerald-400 font-bold text-lg border border-emerald-500/20 shadow-inner">
-                                                        {idx + 1}
-                                                    </span>
-                                                </div>
-                                                <div className="flex-grow">
-                                                    <div className="flex justify-between items-start mb-4">
-                                                        <p className="text-xl text-gray-100 font-medium leading-relaxed">{q.question}</p>
-                                                        <button
-                                                            onClick={() => speakText(q.question, q._id)}
-                                                            className={`p-2 rounded-full transition-colors ${isSpeaking && speakingId === q._id
-                                                                ? "bg-emerald-500/20 text-emerald-400"
-                                                                : "bg-gray-700/30 text-gray-400 hover:text-white hover:bg-gray-700"
-                                                                }`}
-                                                            title="Read Question Aloud"
+                                        <AnimatePresence mode="wait">
+                                            {q.feedback ? (
+                                                <motion.div key="feedback" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                                                     <div className={`inline-flex items-center gap-3 px-6 py-2 rounded-2xl font-black text-[10px] uppercase tracking-widest border ${q.feedback.status === "Spot On" ? "bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 border-emerald-100 dark:border-emerald-800" : "bg-primary-50 dark:bg-primary-900/10 text-primary-600 border-primary-100 dark:border-primary-800"}`}>
+                                                        {q.feedback.status === "Spot On" ? <CheckCircle size={16}/> : <AlertCircle size={16}/>}
+                                                        {q.feedback.status}
+                                                    </div>
+                                                    <div className="p-8 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2.5rem]">
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">AI Critique</p>
+                                                        <p className="text-slate-700 dark:text-slate-300 font-bold leading-relaxed">{q.feedback.message}</p>
+                                                    </div>
+                                                    <div className="opacity-40 italic text-sm text-slate-500 line-clamp-2">" {q.userAnswer} "</div>
+                                                </motion.div>
+                                            ) : (
+                                                <div className="space-y-6">
+                                                    <div className="relative">
+                                                        <textarea
+                                                            value={userAnswers[q._id] || ""}
+                                                            onChange={(e) => setUserAnswers(prev => ({ ...prev, [q._id]: e.target.value }))}
+                                                            placeholder="Synthesizing response components..."
+                                                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] px-10 py-8 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none min-h-[160px]"
+                                                        />
+                                                        <button 
+                                                            onClick={() => startListening(q._id)} 
+                                                            className={`absolute bottom-6 right-6 p-4 rounded-3xl transition-all ${isListening && listeningQuestionId === q._id ? "bg-red-500 text-white scale-110 shadow-lg" : "bg-white dark:bg-slate-800 text-slate-400 hover:text-emerald-500"}`}
                                                         >
-                                                            {isSpeaking && speakingId === q._id ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                                                            {isListening && listeningQuestionId === q._id ? <MicOff size={24} /> : <Mic size={24} />}
                                                         </button>
                                                     </div>
-
-                                                    <AnimatePresence mode="wait">
-                                                        {q.feedback ? (
-                                                            <motion.div
-                                                                initial={{ opacity: 0, height: 0 }}
-                                                                animate={{ opacity: 1, height: "auto" }}
-                                                                exit={{ opacity: 0, height: 0 }}
-                                                                className={`rounded-xl border overflow-hidden ${q.feedback.status === "Spot On" ? "bg-emerald-900/10 border-emerald-500/30" :
-                                                                    q.feedback.status === "Almost Correct" ? "bg-yellow-900/10 border-yellow-500/30" :
-                                                                        "bg-red-900/10 border-red-500/30"
-                                                                    }`}
-                                                            >
-                                                                <div className={`px-5 py-3 border-b flex items-center justify-between font-semibold ${q.feedback.status === "Spot On" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
-                                                                    q.feedback.status === "Almost Correct" ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-400" :
-                                                                        "bg-red-500/10 border-red-500/20 text-red-400"
-                                                                    }`}>
-                                                                    <div className="flex items-center gap-3">
-                                                                        {getFeedbackIcon(q.feedback.status)}
-                                                                        <span>{q.feedback.status}</span>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => speakText(q.feedback.message, `feedback-${q._id}`)}
-                                                                        className={`p-1.5 rounded-full transition-colors ${isSpeaking && speakingId === `feedback-${q._id}`
-                                                                            ? "bg-white/20 text-white"
-                                                                            : "hover:bg-white/10 text-white/70 hover:text-white"
-                                                                            }`}
-                                                                        title="Read Feedback Aloud"
-                                                                    >
-                                                                        {isSpeaking && speakingId === `feedback-${q._id}` ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                                                                    </button>
-                                                                </div>
-
-                                                                <div className="p-5 space-y-4">
-                                                                    <div>
-                                                                        <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">AI Feedback</p>
-                                                                        <p className="text-gray-300 leading-relaxed">{q.feedback.message}</p>
-                                                                    </div>
-
-                                                                    <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700/30">
-                                                                        <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">Your Answer</p>
-                                                                        <p className="text-gray-400 italic">"{q.userAnswer}"</p>
-                                                                    </div>
-                                                                </div>
-                                                            </motion.div>
-                                                        ) : (
-                                                            <motion.div
-                                                                initial={{ opacity: 0 }}
-                                                                animate={{ opacity: 1 }}
-                                                                className="space-y-4"
-                                                            >
-                                                                <div className="relative">
-                                                                    <textarea
-                                                                        value={userAnswers[q._id] || ""}
-                                                                        onChange={(e) => setUserAnswers(prev => ({ ...prev, [q._id]: e.target.value }))}
-                                                                        placeholder="Type or speak your answer here..."
-                                                                        className="w-full bg-gray-900/50 border border-gray-700 rounded-xl p-4 text-gray-200 placeholder-gray-600 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition-all resize-none text-base"
-                                                                        rows={4}
-                                                                    />
-                                                                    {/* Voice Input Button */}
-                                                                    <button
-                                                                        onClick={() => startListening(q._id)}
-                                                                        className={`absolute bottom-3 right-3 p-2 rounded-full transition-all ${isListening && listeningQuestionId === q._id
-                                                                            ? "bg-red-500/20 text-red-400 animate-pulse border border-red-500/50"
-                                                                            : "bg-gray-700/50 text-gray-400 hover:text-emerald-400 hover:bg-gray-700"
-                                                                            }`}
-                                                                        title="Speak your answer"
-                                                                    >
-                                                                        {isListening && listeningQuestionId === q._id ? <MicOff size={18} /> : <Mic size={18} />}
-                                                                    </button>
-                                                                </div>
-                                                                <div className="flex justify-end">
-                                                                    <motion.button
-                                                                        whileHover={{ scale: 1.02 }}
-                                                                        whileTap={{ scale: 0.98 }}
-                                                                        onClick={() => handleSubmitAnswer(q._id)}
-                                                                        disabled={!userAnswers[q._id] || answering[q._id]}
-                                                                        className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl shadow-lg shadow-emerald-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                                                                    >
-                                                                        {answering[q._id] ? (
-                                                                            <Loader className="animate-spin" size={18} />
-                                                                        ) : (
-                                                                            <Send size={18} />
-                                                                        )}
-                                                                        Submit Answer
-                                                                    </motion.button>
-                                                                </div>
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
+                                                    <div className="flex justify-end">
+                                                        <button
+                                                            disabled={!userAnswers[q._id] || answering[q._id]}
+                                                            onClick={() => handleSubmitAnswer(q._id)}
+                                                            className="px-12 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl flex items-center gap-3 transition-all"
+                                                        >
+                                                            {answering[q._id] ? <Loader className="animate-spin" size={18} /> : <Send size={18} />}
+                                                            {answering[q._id] ? "Evaluating..." : "Submit Response"}
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                </motion.div>
+                            ))}
                         </div>
                     </motion.div>
                 )}

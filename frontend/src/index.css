@@ -1,26 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Wave animation for hand icon */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 10% 3.9%;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 5.9% 10%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 240 4.9% 83.9%;
+}
+
+@layer base {
+  * {
+    @apply border-[#e2e8f0] dark:border-[#1e293b];
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+  body {
+    @apply bg-white dark:bg-[#020617] text-slate-900 dark:text-slate-50 antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 dark:bg-slate-800 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-300 dark:bg-slate-700;
+}
+
+/* Animations */
 @keyframes wave {
-
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-
-  25% {
-    transform: rotate(20deg);
-  }
-
-  50% {
-    transform: rotate(0deg);
-  }
-
-  75% {
-    transform: rotate(20deg);
-  }
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(20deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(20deg); }
 }
 
 .animate-wave {
@@ -28,114 +90,7 @@
   transform-origin: 70% 70%;
 }
 
-/* ========================================
-   Light Theme Styles
-   ======================================== */
-
-/* Light mode base styles */
-html.light {
-  background-color: #f9fafb;
-  color: #111827;
-}
-
-html.light body {
-  background-color: #f9fafb;
-}
-
-/* Light mode cards and containers */
-.light .bg-gray-800 {
-  background-color: #ffffff !important;
-  border-color: #e5e7eb !important;
-}
-
-.light .bg-gray-800\/80 {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-}
-
-.light .bg-gray-900 {
-  background-color: #f9fafb !important;
-}
-
-.light .bg-gray-700 {
-  background-color: #f3f4f6 !important;
-}
-
-/* Light mode text colors */
-.light .text-white {
-  color: #111827 !important;
-}
-
-.light .text-gray-300 {
-  color: #4b5563 !important;
-}
-
-.light .text-gray-400 {
-  color: #6b7280 !important;
-}
-
-/* Light mode borders */
-.light .border-gray-700 {
-  border-color: #e5e7eb !important;
-}
-
-.light .border-gray-600 {
-  border-color: #d1d5db !important;
-}
-
-/* Light mode inputs */
-.light input,
-.light textarea,
-.light select {
-  background-color: #ffffff !important;
-  border-color: #d1d5db !important;
-  color: #111827 !important;
-}
-
-.light input::placeholder,
-.light textarea::placeholder {
-  color: #9ca3af !important;
-}
-
-/* Light mode navbar */
-.light nav {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* Light mode hover states */
-.light .hover\:bg-gray-800\/50:hover {
-  background-color: rgba(243, 244, 246, 0.5) !important;
-}
-
-/* Light mode gradients - softer colors */
-.light .from-gray-900 {
-  --tw-gradient-from: #f9fafb !important;
-}
-
-.light .via-gray-800 {
-  --tw-gradient-via: #ffffff !important;
-}
-
-.light .to-gray-900 {
-  --tw-gradient-to: #f3f4f6 !important;
-}
-
-/* Keep accent colors visible in light mode */
-.light .text-cyan-400 {
-  color: #0891b2 !important;
-}
-
-.light .text-emerald-400 {
-  color: #059669 !important;
-}
-
-/* Smooth transitions for theme switching */
-* {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-/* Disable transitions for theme toggle itself */
-button[aria-label*="Switch to"] * {
-  transition: none !important;
+/* Professional card style */
+.glass-card {
+  @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-sm rounded-xl;
 }

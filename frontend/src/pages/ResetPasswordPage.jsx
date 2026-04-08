@@ -16,69 +16,59 @@ const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const { loading, resetPassword } = useUserStore();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (password !== confirmPassword) {
-    toast.error("Passwords do not match");
-    return;
-  }
-
-  try {
-    const result = await resetPassword(token, password);
-    if (result?.success) {
-      toast.success(result.message);
-      setTimeout(() => navigate("/login"), 2000);
-    } else {
-      toast.error(result?.message || "Password reset failed");
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
     }
-  } catch (error) {
-    console.error("Full error details:", error);
-    toast.error(error?.message || error.response?.data?.message || "Error resetting password");
-  }
-};
+
+    try {
+      const result = await resetPassword(token, password);
+      if (result?.success) {
+        toast.success(result.message);
+        setTimeout(() => navigate("/login"), 2000);
+      } else {
+        toast.error(result?.message || "Password reset failed");
+      }
+    } catch (error) {
+      console.error("Full error details:", error);
+      toast.error(error?.message || error.response?.data?.message || "Error resetting password");
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
   return (
-    <div className="flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <motion.div
-        className="sm:mx-auto sm:w-full sm:max-w-md"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-      >
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-cyan-400">
-          Reset Password
-        </h2>
-      </motion.div>
+    <div className="flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-[440px]">
+        {/* Heading */}
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">New Password</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">Create a strong password to secure your account.</p>
+        </div>
 
-      <motion.div
-        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-      >
-        <div className="bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        {/* Content Card */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/50 dark:shadow-none relative"
+        >
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-                New Password
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                </div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 ml-1">New Password</label>
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={18} />
                 <input
                   id="password"
                   type="password"
                   required
                   value={password}
                   onChange={handleChange}
-                  className="block w-full px-3 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-md shadow-sm
-                    placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 dark:text-white focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500/50 outline-none transition-all"
                   placeholder="••••••••"
                 />
               </div>
@@ -86,21 +76,16 @@ const handleSubmit = async (e) => {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300">
-                Confirm Password
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                </div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 ml-1">Confirm New Password</label>
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={18} />
                 <input
                   id="confirmPassword"
                   type="password"
                   required
                   value={confirmPassword}
                   onChange={handleChange}
-                  className="block w-full px-3 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-md shadow-sm
-                    placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 dark:text-white focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500/50 outline-none transition-all"
                   placeholder="••••••••"
                 />
               </div>
@@ -108,31 +93,21 @@ const handleSubmit = async (e) => {
 
             <button
               type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent 
-                rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600
-                 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2
-                  focus:ring-cyan-500 transition duration-150 ease-in-out disabled:opacity-50"
               disabled={loading}
+              className="w-full py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-2xl font-bold text-sm shadow-xl shadow-primary-500/25 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
             >
-              {loading ? (
-                <>
-                  <Loader className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
-                  Resetting...
-                </>
-              ) : (
-                "Reset Password"
-              )}
+              {loading ? <Loader className="animate-spin" /> : <Lock size={18} />}
+              {loading ? "Resetting..." : "Reset Password"}
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-gray-400">
-            Remember your password?{" "}
-            <Link to="/login" className="font-medium text-cyan-400 hover:text-cyan-300">
-              Login here <ArrowRight className="inline h-4 w-4" />
+          <div className="mt-8 text-center pt-4 border-t border-slate-50 dark:border-slate-800/50">
+            <Link to="/login" className="inline-flex items-center gap-2 text-xs font-bold text-primary-600 hover:text-primary-500 transition-all">
+              Already have an account? Log In
             </Link>
-          </p>
-        </div>
-      </motion.div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };

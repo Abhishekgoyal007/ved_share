@@ -1,212 +1,178 @@
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "../../lib/axios";
+import { User, Mail, Shield, Trash2, Search, ArrowRight, Loader, UserCheck, ShieldAlert } from "lucide-react";
 import toast from "react-hot-toast";
-import Modal from "../Modal";
-import { useUserStore } from "../../stores/useUserStore";
-import { motion } from "framer-motion";
-import { Users, Trash2, Shield, ShieldCheck, Mail, CheckCircle, XCircle } from "lucide-react";
 
 const UsersList = () => {
-  const { user: currentUser } = useUserStore();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+    const [users, setUsers] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
 
-  const [showModal, setShowModal] = useState(false);
-  const [modalContent, setModalContent] = useState(null);
+    const fetchUsers = async () => {
+        try {
+            const res = await axios.get("/users");
+            setUsers(res.data);
+        } catch (err) {
+            toast.error("Access Denied: Neural connection failed");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-  const fetchUsers = async () => {
-    try {
-      const { data } = await axios.get("/users");
-      setUsers(data);
-    } catch (error) {
-      toast.error("Failed to fetch users");
-    } finally {
-      setLoading(false);
-    }
-  };
+    useEffect(() => {
+        fetchUsers();
+    }, []);
 
-  const confirmAction = (action, label) => {
-    setModalContent({ action, label });
-    setShowModal(true);
-  };
+    const toggleRole = async (user) => {
+        const newRole = user.role === "admin" ? "user" : "admin";
+        try {
+            const res = await axios.patch(`/users/${user._id}/role`, { role: newRole });
+            setUsers(users.map(u => u._id === user._id ? { ...u, role: res.data.user.role } : u));
+            toast.success(`Role updated: ${res.data.user.role.toUpperCase()}`);
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to update role");
+        }
+    };
 
-  const updateRole = async (userId, role) => {
-    confirmAction(() => actuallyUpdateRole(userId, role), `Change role to "${role}"?`);
-  };
+    const deleteUser = async (userId) => {
+        if (!window.confirm("Terminate this identity record permanently?")) return;
+        try {
+            await axios.delete(`/users/${userId}`);
+            setUsers(users.filter(u => u._id !== userId));
+            toast.success("Identity record purged from mainframe");
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Purge protocol failed");
+        }
+    };
 
-  const actuallyUpdateRole = async (userId, role) => {
-    try {
-      await axios.patch(`/users/${userId}/role`, { role });
-      toast.success("Role updated");
-      fetchUsers();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to update role");
-    }
-  };
-
-  const deleteUser = (userId) => {
-    confirmAction(() => actuallyDeleteUser(userId), "Are you sure you want to delete this user?");
-  };
-
-  const actuallyDeleteUser = async (userId) => {
-    try {
-      await axios.delete(`/users/${userId}`);
-      toast.success("User deleted");
-      fetchUsers();
-    } catch {
-      toast.error("Failed to delete user");
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <div className="relative w-20 h-20">
-          <div className="absolute inset-0 border-4 border-gray-700 rounded-full"></div>
-          <div className="absolute inset-0 border-4 border-t-emerald-500 rounded-full animate-spin"></div>
-        </div>
-      </div>
+    const filteredUsers = users.filter(u => 
+        u.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        u.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }
 
-  return (
-    <motion.div
-      className="bg-gray-800/60 backdrop-blur-md border border-gray-700/50 shadow-xl rounded-2xl overflow-hidden max-w-6xl mx-auto"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-    >
-      <div className="p-6 border-b border-gray-700/50 flex items-center gap-3">
-        <div className="p-2 bg-blue-500/10 rounded-lg">
-          <Users className="w-6 h-6 text-blue-400" />
-        </div>
-        <h2 className="text-xl font-bold text-white">User Management</h2>
-      </div>
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-96 gap-4">
+                <Loader className="animate-spin text-primary-600" size={24} />
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Querying identity database...</p>
+            </div>
+        );
+    }
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700/50">
-          <thead className="bg-gray-800/50">
-            <tr>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                User
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Role
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700/50 bg-transparent">
-            {users.map((u, index) => (
-              <motion.tr
-                key={u._id}
-                className="hover:bg-gray-700/30 transition-colors duration-200"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">
-                        {u.name?.charAt(0).toUpperCase() || "U"}
-                      </span>
+    return (
+        <div className="w-full space-y-4">
+            {/* Header Area */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary-600 rounded-lg text-white shadow-lg shadow-primary-500/20">
+                        <User size={20} />
                     </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-semibold text-white">{u.name}</div>
+                    <div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">User List</h2>
+                        <p className="text-slate-500 font-medium text-[10px] uppercase tracking-widest leading-none mt-1">Total Members: {users.length}</p>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-300">{u.email}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <select
-                    value={u.role}
-                    onChange={(e) => updateRole(u._id, e.target.value)}
-                    disabled={currentUser?._id === u._id}
-                    className={`bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all ${currentUser?._id === u._id ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-gray-700"
-                      }`}
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {u.isVerified ? (
-                    <span className="px-3 py-1 inline-flex items-center gap-1.5 text-xs leading-5 font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      <CheckCircle className="w-3 h-3" />
-                      Verified
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 inline-flex items-center gap-1.5 text-xs leading-5 font-semibold rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
-                      <XCircle className="w-3 h-3" />
-                      Unverified
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {currentUser?._id !== u._id && (
-                    <button
-                      onClick={() => deleteUser(u._id)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-400/10 p-2 rounded-lg transition-colors duration-200"
-                      title="Delete User"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  )}
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
-        {users.length === 0 && (
-          <div className="text-center py-12 text-gray-400">
-            <Users className="mx-auto h-12 w-12 text-gray-600 mb-3" />
-            <p>No users found.</p>
-          </div>
-        )}
-      </div>
+                </div>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
-        <div className="text-sm">
-          <p className="mb-4 text-gray-300">{modalContent?.label}</p>
-          <div className="flex justify-end gap-4">
-            <button
-              onClick={() => {
-                setShowModal(false);
-                modalContent?.action?.();
-              }}
-              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg transition-all duration-200"
-            >
-              Confirm
-            </button>
-            <button
-              onClick={() => setShowModal(false)}
-              className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all duration-200"
-            >
-              Cancel
-            </button>
-          </div>
+                <div className="relative group">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" size={16} />
+                    <input 
+                        type="text"
+                        placeholder="SEARCH USERS..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-[10px] font-black tracking-widest w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all uppercase"
+                    />
+                </div>
+            </div>
+
+            {/* Users Table */}
+            <div className="overflow-x-auto custom-scrollbar -mx-2 sm:mx-0">
+                <table className="w-full text-left border-separate border-spacing-y-2 min-w-[700px]">
+                    <thead>
+                        <tr className="text-slate-400 text-[10px] font-black uppercase tracking-widest opacity-70">
+                            <th className="px-4 pb-2 w-[40%]">User</th>
+                            <th className="px-4 pb-2 text-center w-[20%]">Role</th>
+                            <th className="px-4 pb-2 text-center w-[20%]">Admin Access</th>
+                            <th className="px-4 pb-2 text-right w-[20%]">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-transparent">
+                        <AnimatePresence>
+                            {filteredUsers.map((u, idx) => (
+                                <motion.tr 
+                                    key={u._id}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 10 }}
+                                    transition={{ delay: idx * 0.02 }}
+                                    className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-primary-500/30 transition-all"
+                                >
+                                    {/* Name & Email */}
+                                    <td className="px-4 py-3 rounded-l-2xl border-y border-l border-slate-100 dark:border-slate-800">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-9 w-9 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center group-hover:bg-primary-600 transition-all duration-300">
+                                                <span className="text-[11px] font-black text-slate-500 dark:text-slate-400 group-hover:text-white uppercase">{u.name?.charAt(0)}</span>
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-black text-slate-900 dark:text-white text-[11px] truncate uppercase tracking-tight">{u.name}</p>
+                                                <div className="flex items-center gap-1.5 opacity-60">
+                                                    <Mail size={8} className="text-slate-400" />
+                                                    <span className="text-[9px] font-bold text-slate-500 truncate lowercase max-w-[150px]">{u.email}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    {/* Role Badge */}
+                                    <td className="px-4 py-3 border-y border-slate-100 dark:border-slate-800 text-center">
+                                        <div className={`inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest ${
+                                            u.role === 'admin' 
+                                                ? "bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 text-amber-600" 
+                                                : "bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-400"
+                                        }`}>
+                                            {u.role === 'admin' ? <ShieldAlert size={10} /> : <UserCheck size={10} />}
+                                            {u.role}
+                                        </div>
+                                    </td>
+
+                                    <td className="px-4 py-3 border-y border-slate-100 dark:border-slate-800 text-center">
+                                        <button 
+                                            onClick={() => toggleRole(u)}
+                                            className={`px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all inline-flex items-center gap-2 shadow-sm ${
+                                                u.role === 'admin' 
+                                                    ? "bg-red-50 dark:bg-red-900/10 text-red-600 border border-red-100 dark:border-red-900/20" 
+                                                    : "bg-primary-600 text-white shadow-lg shadow-primary-500/20"
+                                            }`}
+                                        >
+                                            <Shield size={10} />
+                                            {u.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                                        </button>
+                                    </td>
+
+                                    {/* Delete User */}
+                                    <td className="px-4 py-3 rounded-r-2xl border-y border-r border-slate-100 dark:border-slate-800 text-right">
+                                        <button 
+                                            onClick={() => deleteUser(u._id)}
+                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </td>
+                                </motion.tr>
+                            ))}
+                        </AnimatePresence>
+                    </tbody>
+                </table>
+
+                {filteredUsers.length === 0 && (
+                    <div className="py-20 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem]">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">No matching identity records found</p>
+                    </div>
+                )}
+            </div>
         </div>
-      </Modal>
-    </motion.div>
-  );
+    );
 };
 
 export default UsersList;

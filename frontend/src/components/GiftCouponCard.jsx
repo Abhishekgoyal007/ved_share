@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useCartStore } from "../stores/useCartStore";
 
@@ -26,70 +26,70 @@ const GiftCouponCard = () => {
 
 	return (
 		<motion.div
-			className='space-y-4 rounded-lg border border-gray-700 bg-gray-800 p-4 shadow-sm sm:p-6'
+			className='bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm space-y-6'
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.5, delay: 0.2 }}
 		>
-			<div className='space-y-4'>
+			<div className='space-y-6'>
 				<div>
-					<label htmlFor='voucher' className='mb-2 block text-sm font-medium text-gray-300'>
-						Do you have a voucher or gift card?
+					<label htmlFor='voucher' className='text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 block text-center'>
+						Redeem Voucher / Gift Card
 					</label>
-					<input
-						type='text'
-						id='voucher'
-						className='block w-full rounded-lg border border-gray-600 bg-gray-700 
-            p-2.5 text-sm text-white placeholder-gray-400 focus:border-cyan-500 
-            focus:ring-cyan-500'
-						placeholder='Enter code here'
-						value={userInputCode}
-						onChange={(e) => setUserInputCode(e.target.value)}
-						required
-					/>
+                    <div className="flex gap-2">
+                        <input
+                            type='text'
+                            id='voucher'
+                            className='flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500 outline-none transition-all'
+                            placeholder='Enter code...'
+                            value={userInputCode}
+                            onChange={(e) => setUserInputCode(e.target.value)}
+                        />
+                        <button
+                            type='button'
+                            className='px-6 py-3 bg-slate-900 dark:bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all active:scale-95'
+                            onClick={handleApplyCoupon}
+                        >
+                            Apply
+                        </button>
+                    </div>
 				</div>
-
-				<motion.button
-					type='button'
-					className='flex w-full items-center justify-center rounded-lg bg-cyan-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-cyan-700 focus:outline-none focus:ring-4 focus:ring-cyan-300'
-					whileHover={{ scale: 1.05 }}
-					whileTap={{ scale: 0.95 }}
-					onClick={handleApplyCoupon}
-				>
-					Apply Code
-				</motion.button>
 			</div>
-			{isCouponApplied && coupon && (
-				<div className='mt-4'>
-					<h3 className='text-lg font-medium text-gray-300'>Applied Coupon</h3>
 
-					<p className='mt-2 text-sm text-gray-400'>
-						{coupon.code} - {coupon.discountPercentage}% off
-					</p>
-
-					<motion.button
-						type='button'
-						className='mt-2 flex w-full items-center justify-center rounded-lg bg-red-600 
-            px-5 py-2.5 text-sm font-medium text-white hover:bg-red-700 focus:outline-none
-             focus:ring-4 focus:ring-red-300'
-						whileHover={{ scale: 1.05 }}
-						whileTap={{ scale: 0.95 }}
-						onClick={handleRemoveCoupon}
+			<AnimatePresence>
+				{isCouponApplied && coupon && (
+					<motion.div 
+						initial={{ opacity: 0, height: 0 }}
+						animate={{ opacity: 1, height: "auto" }}
+						exit={{ opacity: 0, height: 0 }}
+						className='bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-4 rounded-2xl flex items-center justify-between overflow-hidden'
 					>
-						Remove Coupon
-					</motion.button>
-				</div>
-			)}
+						<div>
+							<p className='text-[10px] font-black text-emerald-600 uppercase tracking-widest'>Active Voucher</p>
+							<p className='text-sm font-bold text-slate-900 dark:text-white mt-1'>{coupon.code}</p>
+						</div>
+						<button
+							type='button'
+							className='text-emerald-600 hover:text-emerald-700 font-black text-[10px] uppercase tracking-widest'
+							onClick={handleRemoveCoupon}
+						>
+							Remove
+						</button>
+					</motion.div>
+				)}
+			</AnimatePresence>
 
-			{coupon && (
-				<div className='mt-4'>
-					<h3 className='text-lg font-medium text-gray-300'>Your Available Coupon:</h3>
-					<p className='mt-2 text-sm text-gray-400'>
-						{coupon.code} - {coupon.discountPercentage}% off
+			{!isCouponApplied && coupon && (
+				<div className='bg-primary-50 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-900/20 p-5 rounded-3xl'>
+					<h3 className='text-[10px] font-black text-primary-600 uppercase tracking-widest mb-1'>Available for you:</h3>
+					<p className='text-sm font-bold text-slate-900 dark:text-white'>
+						{coupon.code} <span className="text-primary-600 ml-2">-{coupon.discountPercentage}% OFF</span>
 					</p>
+                    <p className="text-[10px] text-slate-400 mt-2">Apply this code to save on your order.</p>
 				</div>
 			)}
 		</motion.div>
 	);
 };
+
 export default GiftCouponCard;

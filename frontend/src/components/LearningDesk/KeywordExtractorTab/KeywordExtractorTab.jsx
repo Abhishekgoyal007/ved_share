@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Upload, FileText, Edit, Trash2, Save, X, Plus, Sparkles } from 'lucide-react';
+import { Upload, FileText, Edit, Trash2, Save, X, Plus, Sparkles, BookOpen, Clock, ArrowRight, Loader, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import axios from '../../../lib/axios';
 
 const KeywordExtractorTab = ({ onCreateQuiz }) => {
@@ -23,55 +23,33 @@ const KeywordExtractorTab = ({ onCreateQuiz }) => {
             const response = await axios.get('/extractor/documents');
             setSavedDocuments(response.data.documents || []);
         } catch (error) {
-            if (error.response?.status !== 404) {
-                console.error('Error fetching documents:', error);
-            }
+            console.error('Error fetching documents:', error);
         }
     };
 
     const handleFileSelect = (event) => {
         const file = event.target.files[0];
         if (file) {
-            const validTypes = [
-                'application/pdf',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                'application/msword',
-                'application/vnd.ms-powerpoint'
-            ];
-
-            if (validTypes.includes(file.type)) {
-                setSelectedFile(file);
-                setExtractedKeywords([]);
-            } else {
-                toast.error('Please select a valid PDF, Word, or PowerPoint file');
-                event.target.value = '';
-            }
+            setSelectedFile(file);
+            setExtractedKeywords([]);
         }
     };
 
     const handleUploadAndExtract = async () => {
-        if (!selectedFile) {
-            toast.error('Please select a file first');
-            return;
-        }
-
+        if (!selectedFile) return;
         setIsUploading(true);
         const formData = new FormData();
         formData.append('document', selectedFile);
 
         try {
             const response = await axios.post('/extractor/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
-
             setExtractedKeywords(response.data.keywords);
-            toast.success('Keywords extracted successfully!');
+            toast.success('Extraction successful!');
             fetchSavedDocuments();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to extract keywords');
+            toast.error('Failed to extract keywords');
         } finally {
             setIsUploading(false);
         }
@@ -84,19 +62,12 @@ const KeywordExtractorTab = ({ onCreateQuiz }) => {
 
     const handleSaveEdit = async (keywordId) => {
         try {
-            await axios.put(`/extractor/keywords/${keywordId}`, {
-                text: editValue
-            });
-
-            setExtractedKeywords(extractedKeywords.map(kw =>
-                kw._id === keywordId ? { ...kw, text: editValue } : kw
-            ));
-
+            await axios.put(`/extractor/keywords/${keywordId}`, { text: editValue });
+            setExtractedKeywords(extractedKeywords.map(kw => kw._id === keywordId ? { ...kw, text: editValue } : kw));
             setEditingKeyword(null);
-            setEditValue('');
-            toast.success('Keyword updated');
+            toast.success('Refined');
         } catch (error) {
-            toast.error('Failed to update keyword');
+            toast.error('Update failed');
         }
     };
 
@@ -104,30 +75,25 @@ const KeywordExtractorTab = ({ onCreateQuiz }) => {
         try {
             await axios.delete(`/extractor/keywords/${keywordId}`);
             setExtractedKeywords(extractedKeywords.filter(kw => kw._id !== keywordId));
-            toast.success('Keyword deleted');
+            toast.success('Removed');
         } catch (error) {
-            toast.error('Failed to delete keyword');
+            toast.error('Delete failed');
         }
     };
 
     const handleAddKeyword = async () => {
-        if (!newKeyword.trim()) {
-            toast.error('Please enter a keyword');
-            return;
-        }
-
+        if (!newKeyword.trim()) return;
         try {
             const response = await axios.post('/extractor/keywords', {
                 text: newKeyword,
                 documentId: extractedKeywords[0]?.documentId
             });
-
             setExtractedKeywords([...extractedKeywords, response.data.keyword]);
             setNewKeyword('');
             setAddingKeyword(false);
-            toast.success('Keyword added');
+            toast.success('Injected');
         } catch (error) {
-            toast.error('Failed to add keyword');
+            toast.error('Addition failed');
         }
     };
 
@@ -136,231 +102,163 @@ const KeywordExtractorTab = ({ onCreateQuiz }) => {
             const response = await axios.get(`/extractor/documents/${documentId}`);
             setExtractedKeywords(response.data.keywords);
             setSelectedFile(null);
-            toast.success('Document loaded');
+            toast.success('Sync complete');
         } catch (error) {
-            toast.error('Failed to load document');
+            toast.error('Load failed');
         }
     };
 
     const handleDeleteDocument = async (documentId) => {
+        if (!confirm("Are you sure?")) return;
         try {
             await axios.delete(`/extractor/documents/${documentId}`);
             setSavedDocuments(savedDocuments.filter(doc => doc._id !== documentId));
-            toast.success('Document deleted');
+            toast.success('Purged');
         } catch (error) {
-            toast.error('Failed to delete document');
+            toast.error('Delete failed');
         }
     };
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-                    AI Keyword Extractor
-                </h2>
+        <div className="max-w-6xl mx-auto space-y-10">
+            {/* Intel Interface Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                        <Sparkles size={12}/> AI Analysis Engine
+                    </div>
+                    <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Keyword Extractor</h2>
+                    <p className="text-slate-500 font-medium mt-2">Surface critical concepts and ontological markers from academic files.</p>
+                </div>
             </div>
 
-            {/* Upload Section */}
+            {/* Neural Input Zone */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mb-6"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3rem] p-10 shadow-2xl shadow-slate-200/40 dark:shadow-none"
             >
-                <h3 className="text-xl font-semibold mb-4 text-white flex items-center gap-2">
-                    <Upload size={20} />
-                    Upload Document
-                </h3>
-                <div className="flex flex-col md:flex-row gap-4 items-center">
-                    <div className="flex-1 w-full">
-                        <input
-                            type="file"
-                            accept=".pdf,.doc,.docx,.ppt,.pptx"
-                            onChange={handleFileSelect}
-                            className="w-full text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer"
-                        />
-                        {selectedFile && (
-                            <p className="mt-2 text-gray-400 text-sm">
-                                Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                            </p>
-                        )}
+                <div className="flex flex-col md:flex-row gap-8 items-center">
+                    <div className="flex-1 w-full space-y-2">
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 mb-2">Source Document</p>
+                         <div className="relative group">
+                            <input
+                                type="file"
+                                accept=".pdf,.doc,.docx,.ppt,.pptx"
+                                onChange={handleFileSelect}
+                                className="w-full h-16 opacity-0 absolute inset-0 z-20 cursor-pointer"
+                            />
+                            <div className="w-full h-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center px-6 gap-4 group-hover:border-primary-500 transition-all">
+                                <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-slate-400 group-hover:text-primary-600 transition-colors">
+                                    <FileText size={20} />
+                                </div>
+                                <span className="text-slate-600 dark:text-slate-400 font-bold text-sm truncate uppercase tracking-tight">
+                                    {selectedFile ? selectedFile.name : "Inject academic file (PDF, DOCX...)"}
+                                </span>
+                            </div>
+                         </div>
                     </div>
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={handleUploadAndExtract}
                         disabled={!selectedFile || isUploading}
-                        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-lg"
+                        className="h-16 px-10 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-2xl flex items-center gap-3 font-black text-xs uppercase tracking-[0.2em] shadow-2xl transition-all disabled:opacity-30"
                     >
-                        {isUploading ? (
-                            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                        ) : (
-                            <Sparkles size={18} />
-                        )}
-                        {isUploading ? 'Extracting...' : 'Extract Keywords'}
+                        {isUploading ? <Loader size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                        {isUploading ? "Processing..." : "Run Analysis"}
                     </motion.button>
                 </div>
             </motion.div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Keywords Section */}
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
-                >
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xl font-semibold text-white">Extracted Keywords</h3>
-                        <div className="flex gap-2">
-                            {extractedKeywords.length > 0 && onCreateQuiz && (
-                                <button
-                                    onClick={() => onCreateQuiz(extractedKeywords)}
-                                    className="px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg hover:from-cyan-700 hover:to-blue-700 flex items-center gap-1 text-sm font-medium shadow-lg"
-                                >
-                                    <Sparkles size={14} />
-                                    Create Quiz
-                                </button>
-                            )}
-                            {extractedKeywords.length > 0 && (
-                                <button
-                                    onClick={() => setAddingKeyword(true)}
-                                    className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-1 text-sm font-medium"
-                                >
-                                    <Plus size={14} />
-                                    Add
-                                </button>
-                            )}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                {/* Extracted Matrix */}
+                <div className="lg:col-span-7 space-y-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Extracted Markers</h3>
+                            <span className="px-3 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full text-[10px] font-black">{extractedKeywords.length}</span>
                         </div>
+                        {extractedKeywords.length > 0 && onCreateQuiz && (
+                            <button
+                                onClick={() => onCreateQuiz(extractedKeywords)}
+                                className="px-6 py-2 bg-primary-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-all shadow-xl shadow-primary-500/20"
+                            >
+                                <Sparkles size={14} /> Intelligence Check
+                            </button>
+                        )}
                     </div>
 
-                    {extractedKeywords.length === 0 ? (
-                        <div className="text-center py-12 text-gray-400">
-                            <FileText size={48} className="mx-auto mb-4 opacity-50" />
-                            <p>No keywords extracted yet.</p>
-                            <p className="text-sm mt-2">Upload a document to get started!</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-2 max-h-96 overflow-y-auto">
-                            {addingKeyword && (
-                                <div className="flex gap-2 p-3 bg-gray-700/50 rounded-lg border border-gray-600">
-                                    <input
-                                        type="text"
-                                        value={newKeyword}
-                                        onChange={(e) => setNewKeyword(e.target.value)}
-                                        placeholder="Enter new keyword"
-                                        className="flex-1 px-3 py-2 bg-gray-600 text-white rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-                                        autoFocus
-                                    />
-                                    <button
-                                        onClick={handleAddKeyword}
-                                        className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-                                    >
-                                        <Save size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setAddingKeyword(false);
-                                            setNewKeyword('');
-                                        }}
-                                        className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500"
-                                    >
-                                        <X size={14} />
-                                    </button>
+                    <div className={extractedKeywords.length === 0 ? "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[3rem] p-20 flex flex-col items-center" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
+                        {extractedKeywords.length === 0 ? (
+                            <>
+                                <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-[3rem] mb-6 text-slate-200">
+                                    <Activity size={64} strokeWidth={1} />
                                 </div>
-                            )}
-                            {extractedKeywords.map((keyword) => (
-                                <div key={keyword._id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg border border-gray-600 hover:border-purple-500/50 transition-colors">
-                                    {editingKeyword === keyword._id ? (
-                                        <div className="flex gap-2 flex-1">
+                                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Awaiting analysis payload</p>
+                            </>
+                        ) : (
+                            extractedKeywords.map((kw, i) => (
+                                <motion.div
+                                    key={kw._id}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.05 }}
+                                    className="group flex items-center justify-between p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl hover:border-primary-500/50 transition-all shadow-sm"
+                                >
+                                    {editingKeyword === kw._id ? (
+                                        <div className="flex gap-2 w-full">
                                             <input
-                                                type="text"
                                                 value={editValue}
                                                 onChange={(e) => setEditValue(e.target.value)}
-                                                className="flex-1 px-3 py-2 bg-gray-600 text-white rounded-lg outline-none focus:ring-2 focus:ring-purple-500"
+                                                className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl px-4 py-2 font-bold text-sm focus:outline-none"
                                                 autoFocus
                                             />
-                                            <button
-                                                onClick={() => handleSaveEdit(keyword._id)}
-                                                className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-                                            >
-                                                <Save size={14} />
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setEditingKeyword(null);
-                                                    setEditValue('');
-                                                }}
-                                                className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500"
-                                            >
-                                                <X size={14} />
-                                            </button>
+                                            <button onClick={() => handleSaveEdit(kw._id)} className="p-2 bg-primary-600 text-white rounded-xl"><Save size={14}/></button>
                                         </div>
                                     ) : (
                                         <>
-                                            <span className="text-gray-200 flex-1 font-medium">{keyword.text}</span>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleEditKeyword(keyword)}
-                                                    className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded"
-                                                >
-                                                    <Edit size={14} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteKeyword(keyword._id)}
-                                                    className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
+                                            <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight truncate flex-1">{kw.text}</span>
+                                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => handleEditKeyword(kw)} className="p-2 text-slate-400 hover:text-slate-950 dark:hover:text-white"><Edit size={14}/></button>
+                                                <button onClick={() => handleDeleteKeyword(kw._id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
                                             </div>
                                         </>
                                     )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </motion.div>
+                                </motion.div>
+                            ))
+                        )}
+                    </div>
+                </div>
 
-                {/* Saved Documents Section */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
-                >
-                    <h3 className="text-xl font-semibold mb-4 text-white">Saved Documents</h3>
-                    {savedDocuments.length === 0 ? (
-                        <div className="text-center py-12 text-gray-400">
-                            <FileText size={48} className="mx-auto mb-4 opacity-50" />
-                            <p>No saved documents yet.</p>
-                            <p className="text-sm mt-2">Upload a document to see it here!</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3 max-h-96 overflow-y-auto">
-                            {savedDocuments.map((doc) => (
-                                <div key={doc._id} className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg border border-gray-600 hover:border-purple-500/50 transition-colors">
-                                    <div className="flex-1">
-                                        <h4 className="text-white font-medium">{doc.filename}</h4>
-                                        <p className="text-gray-400 text-sm mt-1">
-                                            {doc.keywords?.length || 0} keywords • {new Date(doc.createdAt).toLocaleDateString()}
-                                        </p>
+                {/* Archive Panel */}
+                <div className="lg:col-span-5 space-y-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Analysis Archive</h3>
+                    </div>
+                    <div className="space-y-3">
+                        {savedDocuments.map((doc) => (
+                            <motion.div
+                                key={doc._id}
+                                className="group p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] hover:shadow-xl transition-all shadow-sm"
+                            >
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="min-w-0">
+                                        <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-tight truncate mb-1">{doc.filename}</h4>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{doc.keywords?.length || 0} MARKERS • {new Date(doc.createdAt).toLocaleDateString()}</p>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => handleLoadDocument(doc._id)}
-                                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium"
-                                        >
-                                            Load
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteDocument(doc._id)}
-                                            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
+                                    <button onClick={() => handleDeleteDocument(doc._id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-all"><Trash2 size={16}/></button>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </motion.div>
+                                <button
+                                    onClick={() => handleLoadDocument(doc._id)}
+                                    className="w-full py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-950 transition-all border border-slate-200 dark:border-slate-700"
+                                >
+                                    Activate Payload
+                                </button>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

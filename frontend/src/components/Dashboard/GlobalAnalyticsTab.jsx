@@ -1,21 +1,20 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import axios from "../../lib/axios";
-import { Users, Package, ShoppingCart, IndianRupee, TrendingUp, PieChart as PieChartIcon, BarChart3 } from "lucide-react";
+import { Users, Package, ShoppingCart, IndianRupee, TrendingUp, PieChart as PieChartIcon, BarChart3, Globe, Loader } from "lucide-react";
 import {
-	LineChart,
-	Line,
 	XAxis,
 	YAxis,
 	CartesianGrid,
 	Tooltip,
-	Legend,
 	ResponsiveContainer,
 	PieChart,
 	Pie,
 	Cell,
 	BarChart,
 	Bar,
+	Area,
+	AreaChart
 } from "recharts";
 
 const COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#EC4899", "#8B5CF6"];
@@ -37,7 +36,12 @@ const GlobalAnalyticsTab = () => {
 			try {
 				const response = await axios.get("/analytics");
 				setAnalyticsData(response.data.analyticsData);
-				setDailySalesData(response.data.dailySalesData);
+				// Format the date for cleaner display
+				const formattedData = response.data.dailySalesData.map(item => ({
+					...item,
+					date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+				}));
+				setDailySalesData(formattedData);
 			} catch (error) {
 				console.error("Error fetching analytics data:", error);
 			} finally {
@@ -50,113 +54,149 @@ const GlobalAnalyticsTab = () => {
 
 	if (isLoading) {
 		return (
-			<div className="flex justify-center items-center h-96">
-				<div className="relative w-20 h-20">
-					<div className="absolute inset-0 border-4 border-gray-700 rounded-full"></div>
-					<div className="absolute inset-0 border-4 border-t-emerald-500 rounded-full animate-spin"></div>
-				</div>
+			<div className="flex flex-col justify-center items-center h-96 gap-4">
+				<Loader className="animate-spin text-primary-600" size={32} />
+				<p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading stats...</p>
 			</div>
 		);
 	}
 
 	return (
-		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8'>
-			{/* Key Metrics Cards */}
+		<div className='max-w-7xl mx-auto space-y-10 pb-12'>
+			{/* Header */}
+			<div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
+				<div>
+					<div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-100 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-full text-[10px] font-black uppercase tracking-widest mb-3">
+						<Globe size={12} /> Platform Stats
+					</div>
+					<h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Marketplace Overview</h2>
+					<p className="text-slate-500 font-medium text-sm mt-1">Real-time performance data for all users and products.</p>
+				</div>
+			</div>
+
+			{/* Summary Cards */}
 			<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6'>
 				<AnalyticsCard
 					title='Total Users'
 					value={analyticsData.users.toLocaleString()}
 					icon={Users}
-					color='from-emerald-500 to-teal-600'
+					color='bg-blue-500'
 					delay={0.1}
+					subtitle="Platform members"
 				/>
 				<AnalyticsCard
 					title='Total Products'
 					value={analyticsData.products.toLocaleString()}
 					icon={Package}
-					color='from-blue-500 to-indigo-600'
+					color='bg-emerald-500'
 					delay={0.2}
+					subtitle="Active listings"
 				/>
 				<AnalyticsCard
 					title='Total Sales'
 					value={analyticsData.totalSales.toLocaleString()}
 					icon={ShoppingCart}
-					color='from-orange-500 to-red-600'
+					color='bg-purple-500'
 					delay={0.3}
+					subtitle="Orders filled"
 				/>
 				<AnalyticsCard
 					title='Total Revenue'
 					value={`₹${analyticsData.totalRevenue.toLocaleString()}`}
 					icon={IndianRupee}
-					color='from-purple-500 to-pink-600'
+					color='bg-amber-500'
 					delay={0.4}
+					subtitle="Platform earnings"
 				/>
 			</div>
 
-			{/* Charts Section */}
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-				{/* Sales & Revenue Trend */}
+			{/* Charts */}
+			<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+				{/* Sales Trend */}
 				<motion.div
-					className='bg-gray-800/60 backdrop-blur-md border border-gray-700/50 rounded-2xl p-6 shadow-xl lg:col-span-2'
+					className='lg:col-span-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm'
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.5, delay: 0.5 }}
 				>
-					<div className="flex items-center gap-3 mb-6">
-						<div className="p-2 bg-emerald-500/10 rounded-lg">
-							<TrendingUp className="text-emerald-400" size={24} />
+					<div className="flex items-center gap-4 mb-10">
+						<div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl text-slate-900 dark:text-white">
+							<TrendingUp size={24} />
 						</div>
-						<h3 className="text-xl font-bold text-white">Sales & Revenue Trend</h3>
+						<div>
+							<h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Recent Activity</h3>
+							<p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Sales and revenue (Last 7 Days)</p>
+						</div>
 					</div>
-					<div className="h-[300px]">
+					<div className="h-[350px]">
 						<ResponsiveContainer width='100%' height='100%'>
-							<LineChart data={dailySalesData}>
-								<CartesianGrid strokeDasharray='3 3' stroke="#374151" vertical={false} />
-								<XAxis dataKey='name' stroke='#9CA3AF' tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-								<YAxis yAxisId='left' stroke='#9CA3AF' tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-								<YAxis yAxisId='right' orientation='right' stroke='#9CA3AF' tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+							<AreaChart data={dailySalesData}>
+								<defs>
+									<linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+										<stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.2} />
+										<stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+									</linearGradient>
+									<linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+										<stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
+										<stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+									</linearGradient>
+								</defs>
+								<CartesianGrid strokeDasharray='3 3' stroke="#E2E8F0" vertical={false} className="dark:hidden" />
+								<CartesianGrid strokeDasharray='3 3' stroke="#1E293B" vertical={false} className="hidden dark:block" />
+								<XAxis dataKey='date' stroke='#9CA3AF' tick={{ fontSize: 10, fontWeight: 700 }} tickLine={false} axisLine={false} dy={10} />
+								<YAxis yAxisId='left' stroke='#9CA3AF' tick={{ fontSize: 10, fontWeight: 700 }} tickLine={false} axisLine={false} />
+								<YAxis yAxisId='right' orientation='right' stroke='#9CA3AF' tick={{ fontSize: 10, fontWeight: 700 }} tickLine={false} axisLine={false} />
 								<Tooltip
-									contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', borderRadius: '0.5rem', color: '#F3F4F6' }}
-									itemStyle={{ color: '#F3F4F6' }}
+									contentStyle={{
+										backgroundColor: '#0F172A',
+										borderRadius: '1rem',
+										border: 'none',
+										color: '#F8FAFC'
+									}}
+									itemStyle={{ fontWeight: 700, fontSize: '12px' }}
 								/>
-								<Legend wrapperStyle={{ paddingTop: '20px' }} />
-								<Line
+								<Area
 									yAxisId='left'
 									type='monotone'
 									dataKey='sales'
-									stroke='#10B981'
+									stroke='#8B5CF6'
 									strokeWidth={3}
-									dot={{ r: 4, fill: '#10B981', strokeWidth: 2, stroke: '#064E3B' }}
+									fillOpacity={1}
+									fill="url(#colorSales)"
 									activeDot={{ r: 6 }}
 									name='Sales'
 								/>
-								<Line
+								<Area
 									yAxisId='right'
 									type='monotone'
 									dataKey='revenue'
-									stroke='#3B82F6'
+									stroke='#10B981'
 									strokeWidth={3}
-									dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#1E3A8A' }}
+									fillOpacity={1}
+									fill="url(#colorRevenue)"
 									activeDot={{ r: 6 }}
 									name='Revenue'
 								/>
-							</LineChart>
+							</AreaChart>
 						</ResponsiveContainer>
 					</div>
 				</motion.div>
 
-				{/* Category Distribution (Product Count) */}
+				{/* Category Pie */}
 				<motion.div
-					className='bg-gray-800/60 backdrop-blur-md border border-gray-700/50 rounded-2xl p-6 shadow-xl'
+					className='lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm'
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.5, delay: 0.6 }}
 				>
-					<div className="flex items-center gap-3 mb-6">
-						<div className="p-2 bg-blue-500/10 rounded-lg">
-							<PieChartIcon className="text-blue-400" size={24} />
+					<div className="flex items-center gap-4 mb-10">
+						<div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-2xl text-blue-600">
+							<PieChartIcon size={24} />
 						</div>
-						<h3 className="text-xl font-bold text-white">Product Distribution</h3>
+						<div>
+							<h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Popularity</h3>
+							<p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Products by category</p>
+						</div>
 					</div>
 					<div className="h-[300px]">
 						<ResponsiveContainer width='100%' height='100%'>
@@ -167,10 +207,9 @@ const GlobalAnalyticsTab = () => {
 									cy='50%'
 									innerRadius={60}
 									outerRadius={100}
-									fill='#8884d8'
 									paddingAngle={5}
 									dataKey='value'
-									label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+									label={({ name, percent }) => `${name.split('-')[0]} ${(percent * 100).toFixed(0)}%`}
 									labelLine={false}
 								>
 									{analyticsData.categoryData?.map((entry, index) => (
@@ -178,39 +217,41 @@ const GlobalAnalyticsTab = () => {
 									))}
 								</Pie>
 								<Tooltip
-									contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', borderRadius: '0.5rem', color: '#F3F4F6' }}
-									itemStyle={{ color: '#F3F4F6' }}
+									contentStyle={{ backgroundColor: '#0F172A', borderRadius: '1rem', border: 'none', color: '#F8FAFC' }}
 								/>
 							</PieChart>
 						</ResponsiveContainer>
 					</div>
 				</motion.div>
 
-				{/* Revenue by Category */}
+				{/* Revenue Bar */}
 				<motion.div
-					className='bg-gray-800/60 backdrop-blur-md border border-gray-700/50 rounded-2xl p-6 shadow-xl'
+					className='lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm'
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.5, delay: 0.7 }}
 				>
-					<div className="flex items-center gap-3 mb-6">
-						<div className="p-2 bg-purple-500/10 rounded-lg">
-							<BarChart3 className="text-purple-400" size={24} />
+					<div className="flex items-center gap-4 mb-10">
+						<div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl text-emerald-600">
+							<BarChart3 size={24} />
 						</div>
-						<h3 className="text-xl font-bold text-white">Revenue by Category</h3>
+						<div>
+							<h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Top Categories</h3>
+							<p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Total revenue per category</p>
+						</div>
 					</div>
 					<div className="h-[300px]">
 						<ResponsiveContainer width='100%' height='100%'>
 							<BarChart data={analyticsData.revenueByCategory} layout="vertical" margin={{ left: 20 }}>
-								<CartesianGrid strokeDasharray='3 3' stroke="#374151" horizontal={false} />
-								<XAxis type="number" stroke='#9CA3AF' tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-								<YAxis dataKey='name' type="category" width={100} stroke='#9CA3AF' tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+								<CartesianGrid strokeDasharray='3 3' stroke="#E2E8F0" horizontal={false} className="dark:hidden" />
+								<CartesianGrid strokeDasharray='3 3' stroke="#1E293B" horizontal={false} className="hidden dark:block" />
+								<XAxis type="number" stroke='#9CA3AF' tick={{ fontSize: 10, fontWeight: 700 }} tickLine={false} axisLine={false} />
+								<YAxis dataKey='name' type="category" width={80} stroke='#9CA3AF' tick={{ fontSize: 10, fontWeight: 700 }} tickLine={false} axisLine={false} />
 								<Tooltip
-									contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', borderRadius: '0.5rem', color: '#F3F4F6' }}
-									cursor={{ fill: '#374151', opacity: 0.4 }}
+									contentStyle={{ backgroundColor: '#0F172A', borderRadius: '1rem', border: 'none', color: '#F8FAFC' }}
 									formatter={(value) => `₹${value.toLocaleString()}`}
 								/>
-								<Bar dataKey='value' fill='#8B5CF6' radius={[0, 4, 4, 0]} barSize={30}>
+								<Bar dataKey='value' fill='#8B5CF6' radius={[0, 8, 8, 0]} barSize={24}>
 									{analyticsData.revenueByCategory?.map((entry, index) => (
 										<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
 									))}
@@ -224,26 +265,26 @@ const GlobalAnalyticsTab = () => {
 	);
 };
 
-const AnalyticsCard = ({ title, value, icon: Icon, color, delay }) => (
+const AnalyticsCard = ({ title, value, icon: Icon, color, delay, subtitle }) => (
 	<motion.div
-		className={`bg-gray-800/80 backdrop-blur-md border border-gray-700/50 rounded-2xl p-6 shadow-lg overflow-hidden relative group`}
-		initial={{ opacity: 0, y: 20 }}
+		className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm relative group overflow-hidden"
+		initial={{ opacity: 0, y: 15 }}
 		animate={{ opacity: 1, y: 0 }}
 		transition={{ duration: 0.5, delay }}
-		whileHover={{ y: -5, transition: { duration: 0.2 } }}
+		whileHover={{ y: -3 }}
 	>
-		<div className='flex justify-between items-start z-10 relative'>
-			<div>
-				<p className='text-gray-400 text-sm font-medium mb-1'>{title}</p>
-				<h3 className='text-white text-3xl font-bold tracking-tight'>{value}</h3>
+		<div className='flex justify-between items-start relative z-10 gap-x-2'>
+			<div className="space-y-4 flex-1">
+				<div className="space-y-1">
+					<p className='text-slate-400 text-[9px] font-black uppercase tracking-widest leading-tight'>{title}</p>
+					<p className="text-slate-500 font-bold text-[9px] leading-tight">{subtitle}</p>
+				</div>
+				<h3 className='text-slate-900 dark:text-white text-xl sm:text-2xl font-black tracking-tight break-words pb-1'>{value}</h3>
 			</div>
-			<div className={`p-3 rounded-xl bg-gradient-to-br ${color} bg-opacity-10`}>
-				<Icon className='h-6 w-6 text-white' />
+			<div className={`p-4 rounded-2xl ${color} bg-opacity-10 text-white shadow-sm flex-shrink-0`}>
+				<Icon className={`h-5 w-5 dark:opacity-90`} strokeWidth={2.5} />
 			</div>
 		</div>
-
-		{/* Decorative background gradient */}
-		<div className={`absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-gradient-to-br ${color} opacity-10 blur-2xl group-hover:opacity-20 transition-opacity duration-500`} />
 	</motion.div>
 );
 

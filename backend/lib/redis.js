@@ -8,10 +8,11 @@ let redisGaveUp = false;
 
 const MAX_RETRY_ATTEMPTS = 3;
 
+const memoryStore = new Map();
 const createDummyRedis = () => ({
-    get: async () => null,
-    set: async () => null,
-    del: async () => null,
+    get: async (key) => memoryStore.get(key) || null,
+    set: async (key, value) => { memoryStore.set(key, value); return "OK"; },
+    del: async (key) => { memoryStore.delete(key); },
     on: () => { },
     status: "disconnected",
 });

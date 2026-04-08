@@ -70,31 +70,22 @@ const EmailVerificationPage = () => {
   }, [code]);
 
   return (
-    <div className="flex flex-col justify-center py-12 sm:px-6 lg:px-8 min-h-screen">
-      <motion.div
-        className="sm:mx-auto sm:w-full sm:max-w-md"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-      >
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-cyan-400">
-          Verify Your Email
-        </h2>
-      </motion.div>
+    <div className="flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-[440px]">
+        {/* Heading */}
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Verify Email</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">Enter the 6-digit code sent to your inbox.</p>
+        </div>
 
-      <motion.div
-        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-      >
-        <div className="bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <p className="text-center text-gray-300 mb-6">
-            Enter the 6-digit code sent to your email address.
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex justify-between">
+        {/* Content Card */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/50 dark:shadow-none relative"
+        >
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="flex justify-between gap-2 sm:gap-4">
               {code.map((digit, index) => (
                 <input
                   key={index}
@@ -104,40 +95,43 @@ const EmailVerificationPage = () => {
                   value={digit}
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="w-12 h-12 text-center text-2xl font-bold bg-gray-700 text-white border-2 border-gray-600 rounded-lg focus:border-cyan-500 focus:outline-none"
+                  className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-black bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all"
                 />
               ))}
             </div>
-            {error && <p className="text-red-500 font-semibold mt-2">{error}</p>}
+            
+            {error && <p className="text-red-500 text-xs font-bold text-center animate-shake">{error}</p>}
 
             <button
               type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition duration-150 ease-in-out disabled:opacity-50"
               disabled={isLoading || code.some((digit) => !digit)}
+              className="w-full py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-2xl font-bold text-sm shadow-xl shadow-primary-500/25 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
             >
-              {isLoading ? (
-                <>
-                  <Loader className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
-                  Verifying...
-                </>
-              ) : (
-                "Verify Email"
-              )}
+              {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Mail size={18} />}
+              {isLoading ? "Verifying..." : "Verify Identity"}
             </button>
 
-            <div className="text-center text-sm text-gray-400">
-              Didn't receive code?{" "}
-              <button
-                type="button"
-                onClick={handleResendOtp}
-                className="font-medium text-cyan-400 hover:text-cyan-300 focus:outline-none"
-              >
-                Resend OTP
-              </button>
+            <div className="text-center border-t border-slate-50 dark:border-slate-800/50 pt-6">
+              <p className="text-xs text-slate-400 font-medium">
+                Didn't receive a code?{" "}
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  className="text-primary-600 font-bold hover:underline"
+                >
+                  Resend OTP
+                </button>
+              </p>
             </div>
           </form>
+        </motion.div>
+
+        <div className="mt-8 text-center">
+            <Link to="/login" className="text-xs font-bold text-slate-400 hover:text-primary-600 transition-colors">
+                Back to Login
+            </Link>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

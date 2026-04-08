@@ -3,45 +3,42 @@ import { createContext, useContext, useState, useEffect } from "react";
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-    // Check localStorage or system preference
     const getInitialTheme = () => {
-        const savedTheme = localStorage.getItem("vedshare-theme");
-        if (savedTheme) return savedTheme;
-
-        // Check system preference
-        if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
-            return "light";
+        if (typeof window !== 'undefined' && window.localStorage) {
+            const savedTheme = window.localStorage.getItem("vedshare-theme");
+            if (savedTheme) return savedTheme;
+            
+            if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+                return "light";
+            }
         }
-        return "dark"; // Default to dark
+        return "dark";
     };
 
     const [theme, setTheme] = useState(getInitialTheme);
 
     useEffect(() => {
-        // Apply theme to document
-        const root = document.documentElement;
+        const applyTheme = (currentTheme) => {
+            const root = window.document.documentElement;
+            if (currentTheme === "dark") {
+                root.classList.add("dark");
+                root.classList.remove("light");
+            } else {
+                root.classList.add("light");
+                root.classList.remove("dark");
+            }
+            localStorage.setItem("vedshare-theme", currentTheme);
+        };
 
-        if (theme === "light") {
-            root.classList.remove("dark");
-            root.classList.add("light");
-        } else {
-            root.classList.remove("light");
-            root.classList.add("dark");
-        }
-
-        // Save to localStorage
-        localStorage.setItem("vedshare-theme", theme);
+        applyTheme(theme);
     }, [theme]);
 
     const toggleTheme = () => {
         setTheme((prev) => (prev === "dark" ? "light" : "dark"));
     };
 
-    const setDarkMode = () => setTheme("dark");
-    const setLightMode = () => setTheme("light");
-
     return (
-        <ThemeContext.Provider value={{ theme, toggleTheme, setDarkMode, setLightMode, isDark: theme === "dark" }}>
+        <ThemeContext.Provider value={{ theme, toggleTheme, isDark: theme === "dark" }}>
             {children}
         </ThemeContext.Provider>
     );

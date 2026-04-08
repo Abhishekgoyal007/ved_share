@@ -14,7 +14,7 @@ export const generateQuestions = async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
 
         let prompt = `Generate 10 most frequently asked interview questions for the following topic: "${title} - ${description}".`;
 
@@ -112,7 +112,7 @@ export const addQuestions = async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
 
         const prompt = `Generate 5 NEW and UNIQUE interview questions for the topic: "${quiz.title} - ${quiz.description}". 
         Existing questions are: ${JSON.stringify(quiz.questions.map(q => q.question))}.
@@ -158,7 +158,7 @@ export const evaluateAnswer = async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
 
         const prompt = `
         You are an expert interviewer. Evaluate the following answer.

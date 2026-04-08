@@ -10,11 +10,6 @@ import {
 	toggleProductSoldStatus,
 	getMyProducts,
 	getProductById,
-	createSwapOffer,
-	acceptSwapOffer,
-	rejectSwapOffer,
-	getSwapOffers,
-	getPendingOffersCount,
 	searchProducts
 } from "../controllers/product.controller.js";
 import { adminRoute, protectRoute } from "../middleware/auth.middleware.js";
@@ -32,12 +27,5 @@ router.patch("/:id", protectRoute, adminRoute, toggleFeaturedProduct);
 router.patch("/:id/toggle-sold", protectRoute, toggleProductSoldStatus);
 router.get("/:id", getProductById);
 router.delete("/:id", protectRoute, deleteProduct);
-
-// Swap Offer Routes
-router.get("/offers/count", protectRoute, getPendingOffersCount);
-router.post("/:id/offer", protectRoute, createSwapOffer);
-router.get("/:id/offers", protectRoute, getSwapOffers);
-router.put("/:id/offer/:offerId/accept", protectRoute, acceptSwapOffer);
-router.put("/:id/offer/:offerId/reject", protectRoute, rejectSwapOffer);
 
 export default router;

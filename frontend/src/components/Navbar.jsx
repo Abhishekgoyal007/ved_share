@@ -12,20 +12,15 @@ const Navbar = () => {
 	const { user, logout } = useUserStore();
 	const isAdmin = user?.role === "admin";
 	const { cart } = useCartStore();
-	const { pendingOffersCount, fetchPendingOffersCount, searchProducts, searchResults, searchLoading, clearSearchResults } = useProductStore();
+	const { searchProducts, searchResults, searchLoading, clearSearchResults } = useProductStore();
 	const navigate = useNavigate();
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	const searchRef = useRef(null);
-
-	useEffect(() => {
-		if (user) fetchPendingOffersCount();
-	}, [fetchPendingOffersCount, user]);
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
 	const dropdownRef = useRef(null);
 
-	// Debounced search
 	useEffect(() => {
 		const timeoutId = setTimeout(() => {
 			if (searchQuery.trim().length >= 2) {
@@ -37,7 +32,6 @@ const Navbar = () => {
 		return () => clearTimeout(timeoutId);
 	}, [searchQuery, searchProducts, clearSearchResults]);
 
-	// Close search dropdown when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (event) => {
 			if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -60,258 +54,152 @@ const Navbar = () => {
 	};
 
 	return (
-		<header className='fixed top-0 left-0 w-full bg-gray-900/95 backdrop-blur-md shadow-xl z-40 border-b border-gray-800'>
-			<div className='container mx-auto px-4 py-3'>
-				<div className='flex flex-wrap justify-between items-center gap-3'>
-					{/* Logo */}
-					<Link to='/' className="flex items-center text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent hover:from-cyan-300 hover:to-blue-400 transition-all duration-300">
-						<img
-							src={vs_logo}
-							alt="VedShare Logo"
-							className="h-10 w-auto mr-2"
+		<header className='fixed top-0 left-0 w-full bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg z-50 border-b border-slate-200 dark:border-slate-800 transition-colors duration-300'>
+			<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4'>
+				{/* Logo */}
+				<Link to='/' className="flex items-center gap-2 group shrink-0">
+					<img src="/logo.png" alt="VedShare" className="h-14 w-14 object-contain" />
+					<span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+						VedShare
+					</span>
+				</Link>
+
+				{/* Search Bar - Center */}
+				<div className="relative flex-1 max-w-md hidden md:block" ref={searchRef}>
+					<div className="relative group">
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors w-4 h-4" />
+						<input
+							type="text"
+							value={searchQuery}
+							onChange={(e) => {
+								setSearchQuery(e.target.value);
+								setIsSearchOpen(true);
+							}}
+							onFocus={() => setIsSearchOpen(true)}
+							placeholder="Search resources..."
+							className="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-full pl-10 pr-10 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200"
 						/>
-						<span className="hidden sm:inline">VedShare</span>
-					</Link>
-
-					{/* Search Bar */}
-					<div className="relative flex-1 max-w-md mx-4 hidden md:block" ref={searchRef}>
-						<div className="relative">
-							<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-							<input
-								type="text"
-								value={searchQuery}
-								onChange={(e) => {
-									setSearchQuery(e.target.value);
-									setIsSearchOpen(true);
+						{searchQuery && (
+							<button
+								onClick={() => {
+									setSearchQuery("");
+									clearSearchResults();
 								}}
-								onFocus={() => setIsSearchOpen(true)}
-								placeholder="Search books, notes, tags..."
-								className="w-full bg-gray-800/80 border border-gray-700/50 rounded-xl pl-10 pr-10 py-2.5 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-200"
-							/>
-							{searchQuery && (
-								<button
-									onClick={() => {
-										setSearchQuery("");
-										clearSearchResults();
-									}}
-									className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-								>
-									<X size={18} />
-								</button>
-							)}
-						</div>
-
-						{/* Search Results Dropdown */}
-						<AnimatePresence>
-							{isSearchOpen && searchQuery.length >= 2 && (
-								<motion.div
-									initial={{ opacity: 0, y: -10 }}
-									animate={{ opacity: 1, y: 0 }}
-									exit={{ opacity: 0, y: -10 }}
-									className="absolute top-full left-0 right-0 mt-2 bg-gray-800/95 backdrop-blur-md border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto z-50"
-								>
-									{searchLoading ? (
-										<div className="p-4 text-center text-gray-400">
-											<div className="animate-spin w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto"></div>
-											<p className="mt-2 text-sm">Searching...</p>
-										</div>
-									) : searchResults.length > 0 ? (
-										<div>
-											{searchResults.map((product) => (
-												<button
-													key={product._id}
-													onClick={() => handleSearchSelect(product._id)}
-													className="w-full flex items-center gap-3 p-3 hover:bg-gray-700/50 transition-colors text-left"
-												>
-													<img
-														src={product.image}
-														alt={product.name}
-														className="w-12 h-12 rounded-lg object-cover"
-													/>
-													<div className="flex-1 min-w-0">
-														<p className="text-white font-medium truncate">{product.name}</p>
-														<div className="flex items-center gap-2">
-															<span className="text-cyan-400 text-sm font-semibold">₹{product.price}</span>
-															{product.tags && product.tags.length > 0 && (
-																<div className="flex gap-1">
-																	{product.tags.slice(0, 2).map((tag) => (
-																		<span key={tag} className="text-xs text-gray-400 bg-gray-700/50 px-1.5 py-0.5 rounded">
-																			#{tag}
-																		</span>
-																	))}
-																</div>
-															)}
-														</div>
-													</div>
-												</button>
-											))}
-										</div>
-									) : (
-										<div className="p-4 text-center text-gray-400">
-											<p className="text-sm">No products found</p>
-										</div>
-									)}
-								</motion.div>
-							)}
-						</AnimatePresence>
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+							>
+								<X size={14} />
+							</button>
+						)}
 					</div>
 
-					<nav className='flex flex-wrap items-center gap-3'>
-						{/* Theme Toggle */}
-						<ThemeToggle />
-
-						{/* Navigation Links */}
-						<Link
-							to={"/"}
-							className='text-gray-300 hover:text-cyan-400 transition-all duration-200 font-medium px-3 py-2 rounded-lg hover:bg-gray-800/50'
-						>
-							Home
-						</Link>
-
-						<Link
-							to={"/about"}
-							className='text-gray-300 hover:text-cyan-400 transition-all duration-200 font-medium px-3 py-2 rounded-lg hover:bg-gray-800/50'
-						>
-							About
-						</Link>
-
-						{/* Cart */}
-						{user && (
-							<Link
-								to={"/cart"}
-								className='relative group text-gray-300 hover:text-cyan-400 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-gray-800/50'
+					{/* Search Results */}
+					<AnimatePresence>
+						{isSearchOpen && searchQuery.length >= 2 && (
+							<motion.div
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: 10 }}
+								className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50"
 							>
-								<ShoppingCart className='inline-block mr-1' size={20} />
-								<span className='hidden sm:inline'>Cart</span>
-								{cart.length > 0 && (
-									<motion.span
-										initial={{ scale: 0 }}
-										animate={{ scale: 1 }}
-										className='absolute -top-1 -right-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-lg'
-									>
-										{cart.length}
-									</motion.span>
-								)}
-							</Link>
-						)}
-
-						{/* Dashboard Button */}
-						{user && (
-							<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-								<Link
-									className='bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition-all duration-200 flex items-center gap-2 relative'
-									to={"/dashboard"}
-								>
-									<LayoutDashboard size={18} />
-									<span className='hidden sm:inline'>Dashboard</span>
-									{pendingOffersCount > 0 && (
-										<span className='absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse shadow-sm border border-white/20'>
-											{pendingOffersCount}
-										</span>
-									)}
-								</Link>
-							</motion.div>
-						)}
-
-						{/* Learning Desk Button */}
-						{user && (
-							<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-								<Link
-									className='bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition-all duration-200 flex items-center gap-2'
-									to={"/learning-desk"}
-								>
-									<BookOpen size={18} />
-									<span className="hidden sm:inline">Learning Desk</span>
-								</Link>
-							</motion.div>
-						)}
-
-						{/* Auth Buttons / Profile Dropdown */}
-						{user ? (
-							<div className="relative" ref={dropdownRef}>
-								<motion.button
-									whileHover={{ scale: 1.05 }}
-									whileTap={{ scale: 0.95 }}
-									className='bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white py-2 px-3 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md'
-									onClick={() => setIsProfileOpen(!isProfileOpen)}
-								>
-									<div className="h-8 w-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-										<span className="text-white font-bold text-sm">
-											{user.name?.charAt(0).toUpperCase() || "U"}
-										</span>
+								{searchLoading ? (
+									<div className="p-8 text-center">
+										<div className="animate-spin w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full mx-auto"></div>
 									</div>
-									<span className='hidden sm:inline'>{user.name}</span>
-									<ChevronDown size={16} className={`transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
-								</motion.button>
-
-								<AnimatePresence>
-									{isProfileOpen && (
-										<motion.div
-											initial={{ opacity: 0, y: -10 }}
-											animate={{ opacity: 1, y: 0 }}
-											exit={{ opacity: 0, y: -10 }}
-											transition={{ duration: 0.2 }}
-											className="absolute right-0 mt-2 w-56 bg-gray-800/95 backdrop-blur-md border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50"
-										>
-											<div className="p-3 border-b border-gray-700">
-												<p className="text-sm font-semibold text-white">{user.name}</p>
-												<p className="text-xs text-gray-400">{user.email}</p>
-											</div>
-											<div className="py-2">
-												<Link
-													to="/profile"
-													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-cyan-400 transition-colors"
-													onClick={() => setIsProfileOpen(false)}
-												>
-													<User size={18} />
-													Your Profile
-												</Link>
-												<Link
-													to="/dashboard?tab=create"
-													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-cyan-400 transition-colors"
-													onClick={() => setIsProfileOpen(false)}
-												>
-													<PlusCircle size={18} />
-													Create Product
-												</Link>
-												<button
-													onClick={() => {
-														setIsProfileOpen(false);
-														logout();
-													}}
-													className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-red-400 transition-colors"
-												>
-													<LogOut size={18} />
-													Logout
-												</button>
-											</div>
-										</motion.div>
-									)}
-								</AnimatePresence>
-							</div>
-						) : (
-							<>
-								<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-									<Link
-										to={"/signup"}
-										className='bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white py-2 px-4 rounded-lg flex items-center gap-2 transition-all duration-200 font-medium shadow-lg'
-									>
-										<UserPlus size={18} />
-										<span className='hidden sm:inline'>Sign Up</span>
-									</Link>
-								</motion.div>
-								<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-									<Link
-										to={"/login"}
-										className='bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white py-2 px-4 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md'
-									>
-										<LogIn size={18} />
-										<span className='hidden sm:inline'>Login</span>
-									</Link>
-								</motion.div>
-							</>
+								) : searchResults.length > 0 ? (
+									<div className="py-2">
+										{searchResults.map((product) => (
+											<button
+												key={product._id}
+												onClick={() => handleSearchSelect(product._id)}
+												className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left"
+											>
+												<img src={product.image} alt="" className="w-10 h-10 rounded-lg object-cover bg-slate-100 dark:bg-slate-800" />
+												<div className="flex-1 min-w-0">
+													<p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{product.name}</p>
+													<p className="text-xs text-primary-600 dark:text-primary-400 font-semibold">₹{product.price}</p>
+												</div>
+											</button>
+										))}
+									</div>
+								) : (
+									<div className="p-8 text-center text-slate-500 text-sm">
+										No resources found for "{searchQuery}"
+									</div>
+								)}
+							</motion.div>
 						)}
+					</AnimatePresence>
+				</div>
+
+				{/* Actions - Right */}
+				<div className="flex items-center gap-2 sm:gap-4 shrink-0">
+					<nav className="hidden lg:flex items-center gap-1">
+						<Link to="/" className="px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Home</Link>
+						<Link to="/about" className="px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">About</Link>
 					</nav>
+
+					<div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-800 hidden lg:block" />
+
+					<ThemeToggle />
+
+					{user && (
+						<Link to="/cart" className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors relative">
+							<ShoppingCart size={20} />
+							{cart.length > 0 && (
+								<span className="absolute top-0 right-0 bg-primary-600 text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full border-2 border-white dark:border-slate-950">
+									{cart.length}
+								</span>
+							)}
+						</Link>
+					)}
+
+					{user ? (
+						<div className="relative" ref={dropdownRef}>
+							<button
+								onClick={() => setIsProfileOpen(!isProfileOpen)}
+								className="flex items-center gap-2 p-1 pl-1 pr-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+							>
+								<div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-xs">
+									{user.name?.charAt(0).toUpperCase()}
+								</div>
+								<ChevronDown size={14} className={`text-slate-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+							</button>
+
+							<AnimatePresence>
+								{isProfileOpen && (
+									<motion.div
+										initial={{ opacity: 0, scale: 0.95, y: 10 }}
+										animate={{ opacity: 1, scale: 1, y: 0 }}
+										exit={{ opacity: 0, scale: 0.95, y: 10 }}
+										className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 z-50"
+									>
+										<div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 mb-2">
+											<p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user.name}</p>
+											<p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+										</div>
+										<Link to="/dashboard" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+											<LayoutDashboard size={16} /> Dashboard
+										</Link>
+										<Link to="/learning-desk" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+											<BookOpen size={16} /> Learning Desk
+										</Link>
+										<Link to="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+											<User size={16} /> Profile Settings
+										</Link>
+										<div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-2" />
+										<button onClick={() => { setIsProfileOpen(false); logout(); }} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
+											<LogOut size={16} /> Sign Out
+										</button>
+									</motion.div>
+								)}
+							</AnimatePresence>
+						</div>
+					) : (
+						<div className="flex items-center gap-2">
+							<Link to="/login" className="px-4 py-2 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 transition-colors hidden sm:block">Sign In</Link>
+							<Link to="/signup" className="px-4 py-2 text-xs sm:text-sm font-semibold bg-primary-600 text-white rounded-full hover:bg-primary-500 transition-all shadow-md shadow-primary-500/20 active:scale-95">Get Started</Link>
+						</div>
+					)}
 				</div>
 			</div>
 		</header>

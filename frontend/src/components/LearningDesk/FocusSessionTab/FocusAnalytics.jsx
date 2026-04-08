@@ -4,12 +4,11 @@ import { motion } from "framer-motion";
 import CalendarHeatmap from "react-calendar-heatmap";
 import "react-calendar-heatmap/dist/styles.css";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { TrendingUp, Calendar, Clock, Flame, Award, Target } from "lucide-react";
+import { TrendingUp, Calendar, Clock, BarChart3, Activity } from "lucide-react";
 
 const FocusAnalytics = () => {
     const { sessionStats, sessionHistory, getHeatmapData } = useFocusStore();
 
-    // Heatmap data
     const heatmapData = useMemo(() => {
         const data = getHeatmapData();
         return data.map(d => ({
@@ -18,7 +17,6 @@ const FocusAnalytics = () => {
         }));
     }, [getHeatmapData]);
 
-    // Last 7 days sessions
     const last7DaysData = useMemo(() => {
         const days = [];
         for (let i = 6; i >= 0; i--) {
@@ -35,7 +33,6 @@ const FocusAnalytics = () => {
         return days;
     }, [sessionHistory]);
 
-    // Last 30 days trend
     const last30DaysTrend = useMemo(() => {
         const days = [];
         for (let i = 29; i >= 0; i--) {
@@ -51,34 +48,14 @@ const FocusAnalytics = () => {
         return days;
     }, [sessionHistory]);
 
-    // Calculate additional stats
-    const avgSessionLength = sessionStats.totalSessions > 0
-        ? Math.round(sessionStats.totalMinutes / sessionStats.totalSessions)
-        : 0;
-
-    const thisWeekSessions = useMemo(() => {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return sessionHistory.filter(s => new Date(s.date) >= weekAgo).length;
-    }, [sessionHistory]);
-
-    const mostProductiveDay = useMemo(() => {
-        const dayTotals = {};
-        sessionHistory.forEach(s => {
-            const day = new Date(s.date).toLocaleDateString('en-US', { weekday: 'long' });
-            dayTotals[day] = (dayTotals[day] || 0) + s.duration;
-        });
-        const entries = Object.entries(dayTotals);
-        if (entries.length === 0) return "N/A";
-        return entries.reduce((a, b) => a[1] > b[1] ? a : b)[0];
-    }, [sessionHistory]);
-
     const CustomTooltip = ({ active, payload }) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 shadow-lg">
-                    <p className="text-white font-medium">{payload[0].payload.date || payload[0].name}</p>
-                    <p className="text-cyan-400 text-sm">{payload[0].value} {payload[0].dataKey === 'sessions' ? 'sessions' : 'minutes'}</p>
+                <div className="bg-slate-900 dark:bg-slate-800 border border-slate-800 dark:border-slate-700 rounded-2xl p-4 shadow-2xl">
+                    <p className="text-white font-black text-xs uppercase tracking-widest mb-1">{payload[0].payload.date || payload[0].name}</p>
+                    <p className="text-primary-400 font-black text-lg">
+                        {payload[0].value} <span className="text-[10px] uppercase tracking-wider">{payload[0].dataKey}</span>
+                    </p>
                 </div>
             );
         }
@@ -86,122 +63,36 @@ const FocusAnalytics = () => {
     };
 
     return (
-        <div className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl p-4"
-                >
-                    <div className="flex items-center gap-2 mb-2">
-                        <Flame size={18} className="text-orange-400" />
-                        <span className="text-gray-400 text-xs uppercase tracking-wide">Current Streak</span>
-                    </div>
-                    <div className="text-2xl font-bold text-white">{sessionStats.currentStreak}</div>
-                    <div className="text-xs text-gray-400 mt-1">days</div>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 }}
-                    className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4"
-                >
-                    <div className="flex items-center gap-2 mb-2">
-                        <Award size={18} className="text-purple-400" />
-                        <span className="text-gray-400 text-xs uppercase tracking-wide">Best Streak</span>
-                    </div>
-                    <div className="text-2xl font-bold text-white">{sessionStats.longestStreak}</div>
-                    <div className="text-xs text-gray-400 mt-1">days</div>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 rounded-xl p-4"
-                >
-                    <div className="flex items-center gap-2 mb-2">
-                        <Clock size={18} className="text-emerald-400" />
-                        <span className="text-gray-400 text-xs uppercase tracking-wide">Total Hours</span>
-                    </div>
-                    <div className="text-2xl font-bold text-white">{sessionStats.totalHours}</div>
-                    <div className="text-xs text-gray-400 mt-1">hours</div>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 }}
-                    className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/30 rounded-xl p-4"
-                >
-                    <div className="flex items-center gap-2 mb-2">
-                        <Calendar size={18} className="text-blue-400" />
-                        <span className="text-gray-400 text-xs uppercase tracking-wide">This Week</span>
-                    </div>
-                    <div className="text-2xl font-bold text-white">{thisWeekSessions}</div>
-                    <div className="text-xs text-gray-400 mt-1">sessions</div>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-4"
-                >
-                    <div className="flex items-center gap-2 mb-2">
-                        <Target size={18} className="text-yellow-400" />
-                        <span className="text-gray-400 text-xs uppercase tracking-wide">Avg Length</span>
-                    </div>
-                    <div className="text-2xl font-bold text-white">{avgSessionLength}</div>
-                    <div className="text-xs text-gray-400 mt-1">minutes</div>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                    className="bg-gradient-to-br from-pink-500/10 to-rose-500/10 border border-pink-500/30 rounded-xl p-4"
-                >
-                    <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp size={18} className="text-pink-400" />
-                        <span className="text-gray-400 text-xs uppercase tracking-wide">Best Day</span>
-                    </div>
-                    <div className="text-lg font-bold text-white truncate">{mostProductiveDay}</div>
-                    <div className="text-xs text-gray-400 mt-1">of week</div>
-                </motion.div>
+        <div className="space-y-10 pt-10">
+            <div className="flex items-center gap-4 mb-2">
+                 <div className="p-3 bg-primary-100 dark:bg-primary-900/20 rounded-2xl text-primary-600">
+                    <BarChart3 size={24} />
+                 </div>
+                 <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Intelligence Hub</h2>
             </div>
 
-            {/* Heatmap */}
+            {/* Heatmap Section */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-10 shadow-sm"
             >
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <Calendar size={20} className="text-cyan-400" />
-                        {sessionHistory.length} sessions in the last year
-                    </h3>
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <span>Less</span>
-                        <div className="flex gap-1">
-                            <div className="w-3 h-3 rounded-sm bg-gray-700"></div>
-                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#0e4429' }}></div>
-                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#006d32' }}></div>
-                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#26a641' }}></div>
-                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#39d353' }}></div>
-                        </div>
-                        <span>More</span>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                    <div>
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                            <Activity className="text-primary-600" size={20} />
+                            Activity Consistency
+                        </h3>
+                        <p className="text-slate-500 text-sm font-medium mt-1">Global audit of your focus blocks over the last cycle.</p>
                     </div>
                 </div>
-                <div className="github-heatmap-container overflow-x-auto">
+                
+                <div className="github-heatmap-container overflow-x-auto pb-4">
                     <CalendarHeatmap
                         startDate={new Date(new Date().setMonth(new Date().getMonth() - 12))}
                         endDate={new Date()}
                         values={heatmapData}
+                        showWeekdayLabels={true}
                         classForValue={(value) => {
                             if (!value || value.count === 0) return 'color-github-0';
                             if (value.count < 20) return 'color-github-1';
@@ -209,105 +100,78 @@ const FocusAnalytics = () => {
                             if (value.count < 60) return 'color-github-3';
                             return 'color-github-4';
                         }}
-                        tooltipDataAttrs={(value) => {
-                            if (!value || !value.date) return {};
-                            const date = new Date(value.date);
-                            const formattedDate = date.toLocaleDateString('en-US', {
-                                weekday: 'short',
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric'
-                            });
-                            return {
-                                'data-tip': `${formattedDate}: ${value.count || 0} minutes`,
-                            };
-                        }}
-                        showWeekdayLabels={true}
                     />
                 </div>
             </motion.div>
 
-            {/* Charts Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Last 7 Days Bar Chart */}
+            {/* Real-time Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 }}
-                    className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-10 shadow-sm"
                 >
-                    <h3 className="text-lg font-semibold text-white mb-4">Last 7 Days</h3>
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Weekly Distribution</h3>
                     <ResponsiveContainer width="100%" height={250}>
                         <BarChart data={last7DaysData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                            <XAxis dataKey="date" stroke="#9ca3af" />
-                            <YAxis stroke="#9ca3af" />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="sessions" fill="#06b6d4" radius={[8, 8, 0, 0]} />
+                            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
+                            <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                            <YAxis hide />
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                            <Bar dataKey="minutes" fill="url(#blueGradient)" radius={[10, 10, 10, 10]} barSize={24} />
+                            <defs>
+                                <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#6366f1" />
+                                    <stop offset="100%" stopColor="#a855f7" />
+                                </linearGradient>
+                            </defs>
                         </BarChart>
                     </ResponsiveContainer>
                 </motion.div>
 
-                {/* 30 Day Trend Line Chart */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-10 shadow-sm"
                 >
-                    <h3 className="text-lg font-semibold text-white mb-4">30-Day Trend</h3>
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Intensity Trend (30D)</h3>
                     <ResponsiveContainer width="100%" height={250}>
                         <LineChart data={last30DaysTrend}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                            <XAxis dataKey="date" stroke="#9ca3af" interval={4} />
-                            <YAxis stroke="#9ca3af" />
+                            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
+                            <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} interval={5} />
+                            <YAxis hide />
                             <Tooltip content={<CustomTooltip />} />
-                            <Line type="monotone" dataKey="minutes" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', r: 4 }} />
+                            <Line 
+                                type="monotone" 
+                                dataKey="minutes" 
+                                stroke="#6366f1" 
+                                strokeWidth={4} 
+                                dot={{ fill: '#6366f1', r: 4, strokeWidth: 2, stroke: '#fff' }} 
+                                activeDot={{ r: 8, strokeWidth: 0 }}
+                            />
                         </LineChart>
                     </ResponsiveContainer>
                 </motion.div>
             </div>
 
-            <style jsx>{`
-                .github-heatmap-container {
-                    padding: 20px 0;
+            <style>{`
+                .github-heatmap-container .react-calendar-heatmap rect {
+                    rx: 4;
+                    ry: 4;
                 }
-                .github-heatmap-container :global(.react-calendar-heatmap) {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                }
-                .github-heatmap-container :global(.react-calendar-heatmap text) {
+                .github-heatmap-container .react-calendar-heatmap .color-github-0 { fill: var(--heatmap-gray); }
+                .github-heatmap-container .react-calendar-heatmap .color-github-1 { fill: #c7d2fe; }
+                .github-heatmap-container .react-calendar-heatmap .color-github-2 { fill: #818cf8; }
+                .github-heatmap-container .react-calendar-heatmap .color-github-3 { fill: #4f46e5; }
+                .github-heatmap-container .react-calendar-heatmap .color-github-4 { fill: #312e81; }
+                
+                :root { --heatmap-gray: #f1f5f9; }
+                .dark { --heatmap-gray: #0f172a; }
+
+                .react-calendar-heatmap text {
                     font-size: 10px;
-                    fill: #9ca3af;
-                }
-                .github-heatmap-container :global(.react-calendar-heatmap .react-calendar-heatmap-month-label) {
-                    font-size: 10px;
-                    fill: #9ca3af;
-                }
-                .github-heatmap-container :global(.react-calendar-heatmap rect) {
-                    rx: 2;
-                    ry: 2;
-                }
-                .github-heatmap-container :global(.react-calendar-heatmap .color-github-0) {
-                    fill: #161b22;
-                    stroke: #1b1f23;
-                    stroke-width: 1px;
-                }
-                .github-heatmap-container :global(.react-calendar-heatmap .color-github-1) {
-                    fill: #0e4429;
-                }
-                .github-heatmap-container :global(.react-calendar-heatmap .color-github-2) {
-                    fill: #006d32;
-                }
-                .github-heatmap-container :global(.react-calendar-heatmap .color-github-3) {
-                    fill: #26a641;
-                }
-                .github-heatmap-container :global(.react-calendar-heatmap .color-github-4) {
-                    fill: #39d353;
-                }
-                .github-heatmap-container :global(.react-calendar-heatmap rect:hover) {
-                    stroke: #06b6d4;
-                    stroke-width: 2px;
-                    opacity: 0.8;
+                    fill: #94a3b8;
+                    font-weight: 700;
                 }
             `}</style>
         </div>

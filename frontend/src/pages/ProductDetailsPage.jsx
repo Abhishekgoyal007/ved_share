@@ -2,8 +2,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "../lib/axios";
 import { useCartStore } from "../stores/useCartStore";
-import { useProductStore } from "../stores/useProductStore";
-import { ShoppingCart, ArrowLeft, X, FileText } from "lucide-react";
+import { useUserStore } from "../stores/useUserStore";
+import { ShoppingCart, ArrowLeft, X, FileText, Share2, ShieldCheck, BadgeCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -16,19 +16,19 @@ const ProductDetailsPage = () => {
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [activeImage, setActiveImage] = useState("");
     const { addToCart } = useCartStore();
-    const { createSwapOffer, fetchMyProducts, products: myProducts } = useProductStore();
-    const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
-    const [selectedSwapProduct, setSelectedSwapProduct] = useState(null);
+    const { user } = useUserStore();
 
     useEffect(() => {
         const fetchProduct = async () => {
             try {
-                const res = await axios.get(`/products/${id}`); // Assuming this endpoint exists or similar
+                const res = await axios.get(`/products/${id}`);
                 setProduct(res.data);
+                setActiveImage(res.data.image);
             } catch (error) {
                 console.error("Error fetching product:", error);
-                toast.error("Failed to load product details");
+                toast.error("Resource not found");
             } finally {
                 setLoading(false);
             }
@@ -37,249 +37,207 @@ const ProductDetailsPage = () => {
         fetchProduct();
     }, [id]);
 
-    // Added functions
-    const handleSwapClick = async () => {
-        await fetchMyProducts();
-        setIsSwapModalOpen(true);
-    };
-
-    const handleSwapSubmit = async () => {
-        if (!selectedSwapProduct) return;
-        const success = await createSwapOffer(product._id, selectedSwapProduct);
-        if (success) {
-            setIsSwapModalOpen(false);
-            setSelectedSwapProduct(null);
+    const handleAddToCart = () => {
+        if (!user) {
+            toast.error("Please login to add to collection");
+            navigate("/login");
+            return;
         }
+        addToCart(product);
     };
 
     if (loading) return <LoadingSpinner />;
 
     if (!product) {
         return (
-            <div className='min-h-screen flex flex-col items-center justify-center space-y-4'>
-                <h2 className='text-3xl font-bold text-white'>Product not found</h2>
-                <Link to='/' className='text-cyan-400 hover:underline'>
-                    Go back home
+            <div className='flex flex-col items-center justify-center py-40 gap-6'>
+                <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800">
+                    <X size={48} className="text-slate-300" />
+                </div>
+                <h2 className='text-3xl font-black text-slate-900 dark:text-white'>Resource not found</h2>
+                <Link to='/' className='bg-primary-600 text-white px-8 py-3 rounded-full font-bold shadow-xl shadow-primary-500/20'>
+                    Return to Library
                 </Link>
             </div>
         );
     }
 
     return (
-        <div className='min-h-screen py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden'>
-            {/* Background Elements */}
-            <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 opacity-50 z-0" />
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute -top-24 -left-24 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
-                <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
-            </div>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+            <button
+                onClick={() => navigate(-1)}
+                className='inline-flex items-center gap-2 text-slate-500 hover:text-primary-600 font-bold text-xs uppercase tracking-widest mb-12 transition-colors'
+            >
+                <ArrowLeft size={16} />
+                Return
+            </button>
 
-            <div className='max-w-7xl mx-auto relative z-10'>
-                <button
-                    onClick={() => navigate(-1)}
-                    className='inline-flex items-center text-gray-400 hover:text-cyan-400 mb-8 transition-colors cursor-pointer'
-                >
-                    <ArrowLeft className='w-5 h-5 mr-2' />
-                    Back
-                </button>
+        <div className='grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24 items-start pb-20'>
+            {/* Visual Assets - Enhanced Image Container */}
+            <div className="lg:col-span-6 sticky top-28">
+                <div className="relative group">
+                    <div className="absolute -inset-1 px-8 py-8 bg-gradient-to-r from-primary-500/20 to-indigo-500/20 rounded-[4rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    
+                    <motion.div 
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className='relative aspect-[4/5] rounded-[3.5rem] overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:shadow-none'
+                    >
+                        <motion.img
+                            key={activeImage || product.image}
+                            src={activeImage || product.image}
+                            alt={product.name}
+                            className='w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110'
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="absolute top-8 right-8 flex flex-col gap-3 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-500">
+                             <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 cursor-pointer border border-white/20">
+                                <Share2 size={22} />
+                             </div>
+                        </div>
+                    </motion.div>
+                </div>
+                
+                {product.images && Object.values(product.images).some(url => url) && (
+                    <div className="mt-6 flex gap-4 overflow-x-auto custom-scrollbar pb-2 px-2">
+                        <button 
+                            onClick={() => setActiveImage(product.image)}
+                            className={`relative flex-shrink-0 w-20 h-24 rounded-2xl overflow-hidden border-2 transition-all ${activeImage === product.image ? 'border-primary-500 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                        >
+                            <img src={product.image} className="w-full h-full object-cover" alt="Main cover" />
+                        </button>
+                        {['back', 'left', 'right'].map(angle => {
+                            const url = product.images[angle];
+                            if (!url) return null;
+                            return (
+                                <button 
+                                    key={angle}
+                                    onClick={() => setActiveImage(url)}
+                                    className={`relative flex-shrink-0 w-20 h-24 rounded-2xl overflow-hidden border-2 transition-all ${activeImage === url ? 'border-primary-500 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                >
+                                    <img src={url} className="w-full h-full object-cover" alt={`${angle} view`} />
+                                    <div className="absolute bottom-0 inset-x-0 bg-slate-900/60 backdrop-blur-sm text-[8px] font-black text-white uppercase text-center py-1">
+                                        {angle}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
 
-                <div className='grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20'>
-                    {/* Product Image */}
-                    <div className='relative group'>
-                        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-                        <div className='relative aspect-square rounded-2xl overflow-hidden bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 shadow-2xl'>
-                            <img
-                                src={product.image}
-                                alt={product.name}
-                                className='w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105'
-                            />
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6 px-2">
+                    <div className="bg-white dark:bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/60 flex items-center gap-5 shadow-sm">
+                        <div className="p-3.5 bg-emerald-100 dark:bg-emerald-900/20 rounded-2xl text-emerald-600">
+                            <ShieldCheck size={26} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Community Verified</p>
+                            <p className="text-base font-bold text-slate-900 dark:text-white">Authentic Material</p>
                         </div>
                     </div>
-
-                    {/* Product Details */}
-                    <div className='flex flex-col justify-center space-y-8'>
+                    <div className="bg-white dark:bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/60 flex items-center gap-5 shadow-sm">
+                        <div className="p-3.5 bg-blue-100 dark:bg-blue-900/20 rounded-2xl text-blue-600">
+                            <BadgeCheck size={26} />
+                        </div>
                         <div>
-                            <h1 className='text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight'>
-                                {product.name}
-                            </h1>
-                            <div className="flex items-center gap-4">
-                                {product.price === 0 ? (
-                                    <span className='text-3xl font-extrabold text-green-400 uppercase tracking-wider'>Free</span>
-                                ) : (
-                                    <span className='text-3xl font-bold text-cyan-400'>
-                                        ₹{product.price.toFixed(2)}
-                                    </span>
-                                )}
-                                <span className="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-medium">
-                                    {product.category}
-                                </span>
-                                {product.isFeatured && (
-                                    <span className="px-3 py-1 rounded-full bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 text-sm font-medium">
-                                        Featured
-                                    </span>
-                                )}
-                                {product.isBookSwap && ( // Added Book Swap badge
-                                    <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-sm font-medium">
-                                        Book Swap
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className='prose prose-invert max-w-none'>
-                            <h3 className="text-xl font-semibold text-white mb-3">Description</h3>
-                            <p className='text-gray-300 text-lg leading-relaxed'>
-                                {product.description}
-                            </p>
-                        </div>
-
-                        {/* Tags Section */}
-                        {product.tags && product.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                                {product.tags.map((tag) => (
-                                    <span
-                                        key={tag}
-                                        className="px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/30 text-cyan-300 text-sm font-medium"
-                                    >
-                                        #{tag}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-
-                        {product.pdfUrl && (
-                            <div className="mt-8">
-                                <h3 className="text-xl font-semibold text-white mb-4">Preview</h3>
-                                <button
-                                    onClick={() => setIsPreviewOpen(true)}
-                                    className="flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-white font-medium transition-all hover:border-cyan-500/50 group"
-                                >
-                                    <FileText className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
-                                    Preview PDF (First 3 Pages)
-                                </button>
-                            </div>
-                        )}
-
-                        <div className='pt-6 border-t border-gray-700/50'>
-                            {product.isBookSwap ? ( // Conditional rendering for swap button
-                                <button
-                                    onClick={handleSwapClick}
-                                    className='w-full sm:w-auto flex items-center justify-center bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transform transition hover:-translate-y-1 hover:shadow-purple-500/25'
-                                >
-                                    <ShoppingCart className='w-6 h-6 mr-3' />
-                                    Swap with my Book
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => addToCart(product)}
-                                    className='w-full sm:w-auto flex items-center justify-center bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transform transition hover:-translate-y-1 hover:shadow-cyan-500/25'
-                                >
-                                    <ShoppingCart className='w-6 h-6 mr-3' />
-                                    Add to Cart
-                                </button>
-                            )}
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Indexing Quality</p>
+                            <p className="text-base font-bold text-slate-900 dark:text-white">HD Digital Scan</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* PDF Preview Modal */}
-            <AnimatePresence>
-                {isPreviewOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex flex-col bg-gray-900/95 backdrop-blur-sm"
-                    >
-                        <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-gray-900 z-10">
-                            <h3 className="text-lg font-bold text-white truncate max-w-xl">Preview: {product.name}</h3>
-                            <button
-                                onClick={() => setIsPreviewOpen(false)}
-                                className="p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
+            {/* Details & Actions */}
+            <div className='lg:col-span-6 py-4'>
+                <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="space-y-12"
+                >
+                    <div className="space-y-8">
+                        <div className="flex flex-wrap gap-2">
+                            <div className="px-5 py-2 bg-primary-50 dark:bg-primary-900/10 text-primary-600 dark:text-primary-400 rounded-2xl text-[11px] font-black uppercase tracking-widest border border-primary-100 dark:border-primary-800 shadow-sm">
+                                {product.category.replace(/-/g, ' ')}
+                            </div>
                         </div>
+                        
+                        <h1 className='text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tighter leading-[1.05]'>
+                            {product.name}
+                        </h1>
 
-                        <div className="flex-1 overflow-auto p-4 flex justify-center">
-                            <SecurePDFViewer url={product.pdfUrl} limitPages={3} />
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Swap Modal */}
-            <AnimatePresence>
-                {isSwapModalOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl"
-                        >
-                            <div className="p-6 border-b border-gray-700">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-xl font-bold text-white">Select a Book to Swap</h3>
-                                    <button
-                                        onClick={() => setIsSwapModalOpen(false)}
-                                        className="text-gray-400 hover:text-white transition-colors"
-                                    >
-                                        <X className="w-6 h-6" />
-                                    </button>
+                        <div className='flex items-center gap-6'>
+                            {product.price === 0 ? (
+                                <div className="px-6 py-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 rounded-2xl">
+                                    <span className='text-5xl font-black text-emerald-500 tracking-tighter'>FREE</span>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="flex items-baseline gap-4">
+                                    <span className='text-6xl font-black text-slate-900 dark:text-white tracking-tighter'>₹{product.price.toLocaleString()}</span>
+                                    <span className="text-slate-300 dark:text-slate-600 font-bold line-through text-2xl tracking-tight">₹{(product.price * 1.5).toFixed(0)}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
-                            <div className="p-6 max-h-[60vh] overflow-y-auto">
-                                {myProducts?.filter(p => p.isBookSwap).length > 0 ? (
-                                    <div className="space-y-4">
-                                        {myProducts.filter(p => p.isBookSwap).map((p) => (
-                                            <div
-                                                key={p._id}
-                                                onClick={() => setSelectedSwapProduct(p._id)}
-                                                className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${selectedSwapProduct === p._id
-                                                    ? "bg-purple-500/20 border-purple-500"
-                                                    : "bg-gray-700/30 border-gray-700 hover:border-gray-600"
-                                                    }`}
-                                            >
-                                                <img src={p.image} alt={p.name} className="w-16 h-16 object-cover rounded-lg" />
-                                                <div>
-                                                    <h4 className="font-semibold text-white">{p.name}</h4>
-                                                    <p className="text-sm text-gray-400">{p.category}</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-8 text-gray-400">
-                                        <p>You don't have any books listed for swap.</p>
-                                        <Link to="/secret-dashboard" className="text-purple-400 hover:underline mt-2 block">
-                                            List a book for swap
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
+                    <div className="space-y-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Description</h3>
+                        <p className='text-slate-600 dark:text-slate-400 text-lg leading-relaxed'>
+                            {product.description}
+                        </p>
+                    </div>
 
-                            <div className="p-6 border-t border-gray-700 bg-gray-800/50">
-                                <button
-                                    onClick={handleSwapSubmit}
-                                    disabled={!selectedSwapProduct}
-                                    className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    Send Swap Offer
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                    {product.tags && product.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            {product.tags.map((tag) => (
+                                <span key={tag} className="text-xs font-bold text-slate-400 dark:text-slate-500">#{tag}</span>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                        <button
+                            onClick={handleAddToCart}
+                            className='flex-1 py-5 bg-primary-600 hover:bg-primary-500 text-white font-black rounded-3xl shadow-2xl shadow-primary-500/20 transition-all flex items-center justify-center gap-3 active:scale-95'
+                        >
+                            <ShoppingCart size={24} />
+                            Add to Collection
+                        </button>
+                        
+                        {product.pdfUrl && (
+                            <button
+                                onClick={() => setIsPreviewOpen(true)}
+                                className="px-8 py-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl text-slate-900 dark:text-white font-bold hover:bg-slate-50 transition-all shadow-sm"
+                            >
+                                <FileText size={24} />
+                            </button>
+                        )}
+                    </div>
+                    
+                    <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        Secure payment & verified delivery guaranteed.
+                    </p>
+                </motion.div>
+            </div>
         </div>
+
+        <AnimatePresence>
+            {isPreviewOpen && (
+                <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center p-4">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsPreviewOpen(false)} className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" />
+                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-5xl h-[90vh] bg-white rounded-[3rem] overflow-hidden shadow-2xl">
+                         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                             <h3 className="text-xl font-bold font-sans">Document Preview</h3>
+                             <button onClick={() => setIsPreviewOpen(false)} className="p-2 hover:bg-slate-100 rounded-full"><X size={24}/></button>
+                         </div>
+                         <div className="flex-1 h-full overflow-hidden">
+                            <SecurePDFViewer url={product.pdfUrl} limitPages={3} />
+                         </div>
+                    </motion.div>
+                </div>
+            )}
+        </AnimatePresence>
+    </div>
     );
 };
 

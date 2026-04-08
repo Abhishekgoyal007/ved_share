@@ -2,10 +2,11 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 
-export const useProductStore = create((set) => ({
-	products: [],
+export const useProductStore = create((set, get) => ({
+	products: [], // Generic list used for browsing/categories
+	adminProducts: [], // Separate list for Global Directory
+	userProducts: [], // Separate list for My Products
 	loading: false,
-	pendingOffersCount: 0,
 	searchResults: [],
 	searchLoading: false,
 
@@ -33,7 +34,7 @@ export const useProductStore = create((set) => ({
 		try {
 			const res = await axios.post("/products", productData);
 			set((prevState) => ({
-				products: [...prevState.products, res.data],
+				userProducts: [...prevState.userProducts, res.data],
 				loading: false,
 			}));
 			toast.success("Product created successfully!");
@@ -41,7 +42,6 @@ export const useProductStore = create((set) => ({
 			set({ loading: false });
 			const errorMessage = error.response?.data?.error || error.message || "Failed to create product";
 			toast.error(errorMessage);
-			// Re-throw the error so the form can catch it and preserve user input
 			throw error;
 		}
 	},
@@ -49,28 +49,41 @@ export const useProductStore = create((set) => ({
 		set({ loading: true });
 		try {
 			const response = await axios.get("/products");
-			set({ products: response.data.products, loading: false });
+			set({ adminProducts: response.data.products, loading: false });
 		} catch (error) {
 			set({ error: "Failed to fetch products", loading: false });
-			toast.error(error.response.data.error || "Failed to fetch products");
+			toast.error(error.response?.data?.error || "Failed to fetch products");
 		}
 	},
 	fetchProductsByCategory: async (category) => {
 		set({ loading: true });
+        
+        const timeoutId = setTimeout(() => {
+            const { loading } = get();
+            if (loading) {
+                set({ loading: false });
+                toast.error("Resource fetch timed out. Please refresh.");
+            }
+        }, 10000);
+
 		try {
 			const response = await axios.get(`/products/category/${category}`);
+            clearTimeout(timeoutId);
 			set({ products: response.data.products, loading: false });
 		} catch (error) {
+            clearTimeout(timeoutId);
 			set({ error: "Failed to fetch products", loading: false });
-			toast.error(error.response.data.error || "Failed to fetch products");
+			toast.error(error.response?.data?.error || "Failed to fetch products");
 		}
 	},
 	deleteProduct: async (productId) => {
 		set({ loading: true });
 		try {
 			await axios.delete(`/products/${productId}`);
-			set((prevProducts) => ({
-				products: prevProducts.products.filter((product) => product._id !== productId),
+			set((prevState) => ({
+				adminProducts: prevState.adminProducts.filter((p) => p._id !== productId),
+				userProducts: prevState.userProducts.filter((p) => p._id !== productId),
+				products: prevState.products.filter((p) => p._id !== productId),
 				loading: false,
 			}));
 			toast.success("Product deleted successfully");
@@ -83,10 +96,9 @@ export const useProductStore = create((set) => ({
 		set({ loading: true });
 		try {
 			const response = await axios.patch(`/products/${productId}`);
-			// this will update the isFeatured prop of the product
-			set((prevProducts) => ({
-				products: prevProducts.products.map((product) =>
-					product._id === productId ? { ...product, isFeatured: response.data.isFeatured } : product
+			set((prevState) => ({
+				adminProducts: prevState.adminProducts.map((p) =>
+					p._id === productId ? { ...p, isFeatured: response.data.isFeatured } : p
 				),
 				loading: false,
 			}));
@@ -114,7 +126,7 @@ export const useProductStore = create((set) => ({
 		set({ loading: true });
 		try {
 			const response = await axios.get("/products/my-products");
-			set({ products: response.data.products, loading: false });
+			set({ userProducts: response.data.products, loading: false });
 		} catch (error) {
 			set({ error: "Failed to fetch your products", loading: false });
 			console.error("Error fetching my products:", error);
@@ -122,82 +134,21 @@ export const useProductStore = create((set) => ({
 		}
 	},
 
-	createSwapOffer: async (targetProductId, offeredProductId) => {
-		set({ loading: true });
-		try {
-			await axios.post(`/products/${targetProductId}/offer`, { offeredProductId });
-			set({ loading: false });
-			toast.success("Swap offer sent successfully!");
-			return true;
-		} catch (error) {
-			set({ loading: false });
-			toast.error(error.response?.data?.message || "Failed to send swap offer");
-			return false;
-		}
-	},
-
-	fetchProductOffers: async (productId) => {
-		set({ loading: true });
-		try {
-			const response = await axios.get(`/products/${productId}/offers`);
-			set({ loading: false });
-			return response.data.offers;
-		} catch (error) {
-			set({ loading: false });
-			toast.error(error.response?.data?.message || "Failed to fetch offers");
-			return [];
-		}
-	},
-
-	acceptSwapOffer: async (productId, offerId) => {
-		set({ loading: true });
-		try {
-			await axios.put(`/products/${productId}/offer/${offerId}/accept`);
-			set({ loading: false });
-			toast.success("Offer accepted!");
-			return true;
-		} catch (error) {
-			set({ loading: false });
-			toast.error(error.response?.data?.message || "Failed to accept offer");
-			return false;
-		}
-	},
-
-	rejectSwapOffer: async (productId, offerId) => {
-		set({ loading: true });
-		try {
-			await axios.put(`/products/${productId}/offer/${offerId}/reject`);
-			set({ loading: false });
-			toast.success("Offer rejected");
-			return true;
-		} catch (error) {
-			set({ loading: false });
-			toast.error(error.response?.data?.message || "Failed to reject offer");
-			return false;
-		}
-	},
-
-	fetchPendingOffersCount: async () => {
-		try {
-			const response = await axios.get("/products/offers/count");
-			set({ pendingOffersCount: response.data.count });
-		} catch (error) {
-			console.error("Error fetching pending offers count:", error);
-		}
-	},
-
 	toggleProductSoldStatus: async (productId) => {
 		set({ loading: true });
 		try {
 			const response = await axios.patch(`/products/${productId}/toggle-sold`);
-			set((prevProducts) => ({
-				products: prevProducts.products.map((product) =>
-					product._id === productId ? { ...product, sold: response.data.sold } : product
+			set((prevState) => ({
+				userProducts: prevState.userProducts.map((p) =>
+					p._id === productId ? { ...p, sold: response.data.sold } : p
+				),
+				adminProducts: prevState.adminProducts.map((p) =>
+					p._id === productId ? { ...p, sold: response.data.sold } : p
 				),
 				loading: false,
 			}));
 			toast.success(
-				`Product marked as ${response.data.sold ? "sold" : "available"}`
+				`Product marked as ${response.data.sold ? "SOLD" : "AVAILABLE"}`
 			);
 		} catch (error) {
 			set({ loading: false });

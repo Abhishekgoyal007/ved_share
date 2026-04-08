@@ -54,10 +54,6 @@ const productSchema = new mongoose.Schema(
 			type: String,
 			required: false,
 		},
-		isBookSwap: {
-			type: Boolean,
-			default: false,
-		},
 		tags: {
 			type: [String],
 			default: [],
@@ -77,29 +73,6 @@ const productSchema = new mongoose.Schema(
 			unique: true,
 			sparse: true,
 		},
-		swapOffers: [
-			{
-				offeredProductId: {
-					type: mongoose.Schema.Types.ObjectId,
-					ref: "Product",
-					required: true,
-				},
-				userId: {
-					type: mongoose.Schema.Types.ObjectId,
-					ref: "User",
-					required: true,
-				},
-				status: {
-					type: String,
-					enum: ["pending", "accepted", "rejected"],
-					default: "pending",
-				},
-				createdAt: {
-					type: Date,
-					default: Date.now,
-				},
-			},
-		],
 	},
 	{ timestamps: true }
 );

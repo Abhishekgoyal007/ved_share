@@ -171,12 +171,12 @@ export const getPurchasedProducts = async (req, res) => {
 	try {
 		const orders = await Order.find({ user: req.user._id }).populate("products.product");
 
-		const purchasedProducts = orders.flatMap((order) =>
-			order.products.map((item) => item.product)
-		).filter((product, index, self) =>
-			// Filter out nulls (deleted products) and duplicates
-			product && self.findIndex(p => p._id.toString() === product._id.toString()) === index
-		);
+		const purchasedProducts = orders
+			.flatMap((order) => order.products.map((item) => item.product))
+			.filter((product) => product != null)
+			.filter((product, index, self) =>
+				self.findIndex((p) => p._id.toString() === product._id.toString()) === index
+			);
 
 		res.json(purchasedProducts);
 	} catch (error) {

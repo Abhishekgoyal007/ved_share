@@ -1,154 +1,145 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trash, Star, Package } from "lucide-react";
+import { Trash, Star, Package, IndianRupee, ExternalLink, ShieldCheck, Box, Activity } from "lucide-react";
 import { useProductStore } from "../../stores/useProductStore";
 
 const GlobalProductsList = () => {
-	const { deleteProduct, toggleFeaturedProduct, products } = useProductStore();
+	const { deleteProduct, toggleFeaturedProduct, adminProducts, fetchAllProducts } = useProductStore();
+
+    useEffect(() => {
+        fetchAllProducts();
+    }, [fetchAllProducts]);
 
 	return (
-		<motion.div
-			className='bg-gray-800/60 backdrop-blur-md border border-gray-700/50 shadow-xl rounded-2xl overflow-hidden max-w-6xl mx-auto'
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.8 }}
-		>
-			<div className="p-6 border-b border-gray-700/50 flex items-center gap-3">
-				<div className="p-2 bg-blue-500/10 rounded-lg">
-					<Package className="w-6 h-6 text-blue-400" />
-				</div>
-				<h2 className="text-xl font-bold text-white">All Products</h2>
-			</div>
+		<div className='w-full space-y-4'>
+            <div className="flex items-center gap-3 mb-2 px-1">
+                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/20 rounded-lg text-blue-600">
+                    <Box size={18} />
+                </div>
+                <div>
+                    <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">All Products</h2>
+                    <p className="text-slate-500 font-medium text-[10px] uppercase tracking-wider">All items in store</p>
+                </div>
+            </div>
 
-			<div className="overflow-x-auto">
-				<table className='min-w-full divide-y divide-gray-700/50'>
-					<thead className='bg-gray-800/50'>
-						<tr>
-							<th
-								scope='col'
-								className='px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider'
-							>
-								Product
-							</th>
-							<th
-								scope='col'
-								className='px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider'
-							>
-								Price
-							</th>
-							<th
-								scope='col'
-								className='px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider'
-							>
-								Category
-							</th>
-							<th
-								scope='col'
-								className='px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider'
-							>
-								Seller
-							</th>
+            <div className="overflow-x-auto custom-scrollbar -mx-2 sm:-mx-0">
+                <table className="w-full text-left border-separate border-spacing-y-1.5 min-w-full">
+                    <thead>
+                        <tr className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                            <th className="px-2 pb-2 w-[40%] text-left">Book Details</th>
+                            <th className="px-2 pb-2 text-left w-[10%] whitespace-nowrap">Value</th>
+                            <th className="px-2 pb-2 text-center w-[10%]">Featured</th>
+                            <th className="px-2 pb-2 text-center w-[15%]">Status</th>
+                            <th className="px-2 pb-2 w-[15%] text-center">Owner</th>
+                            <th className="px-2 pb-2 text-right w-[10%] whitespace-nowrap">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-transparent">
+                        {adminProducts?.map((product, idx) => (
+                            <motion.tr 
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.02 }}
+                                key={product._id} 
+                                className={`group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-all hover:border-primary-500/30 ${product.sold ? "opacity-60 grayscale-[0.5]" : ""}`}
+                            >
+                                {/* Identification */}
+                                <td className="px-4 py-2.5 rounded-l-2xl border-y border-l border-slate-100 dark:border-slate-800">
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative flex-shrink-0">
+                                            <div className="w-8 h-8 rounded-lg overflow-hidden ring-1 ring-slate-100 dark:ring-slate-800">
+                                                <img
+                                                    src={product.image}
+                                                    alt=""
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            {product.isFeatured && (
+                                                <div className="absolute -top-1 -right-1 bg-amber-400 p-0.5 rounded shadow-sm">
+                                                    <ShieldCheck size={8} className="text-white fill-current" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-black text-slate-900 dark:text-white text-[11px] truncate tracking-tight uppercase leading-none">{product.name}</p>
+                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5 block truncate opacity-70">{product.category.replace(/-/g, ' ')}</span>
+                                        </div>
+                                    </div>
+                                </td>
 
-							<th
-								scope='col'
-								className='px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider'
-							>
-								Featured
-							</th>
-							<th
-								scope='col'
-								className='px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider'
-							>
-								Status
-							</th>
-							<th
-								scope='col'
-								className='px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider'
-							>
-								Actions
-							</th>
-						</tr>
-					</thead>
+                                {/* Value */}
+                                <td className="px-2 py-2.5 border-y border-slate-100 dark:border-slate-800 text-left">
+                                    <div className="flex items-center justify-start gap-1">
+                                        <IndianRupee size={10} className="text-emerald-500" />
+                                        <span className="font-black text-xs text-slate-900 dark:text-white">
+                                            {product.price.toLocaleString()}
+                                        </span>
+                                    </div>
+                                </td>
 
-					<tbody className='divide-y divide-gray-700/50 bg-transparent'>
-						{products?.map((product) => (
-							<tr key={product._id} className={`hover:bg-gray-700/30 transition-colors duration-200 ${product.sold ? "opacity-75" : ""}`}>
-								<td className='px-6 py-4 whitespace-nowrap'>
-									<Link to={`/product/${product._id}`} className='flex items-center group cursor-pointer'>
-										<div className='flex-shrink-0 h-12 w-12 relative'>
-											<img
-												className={`h-12 w-12 rounded-xl object-cover border border-gray-700 shadow-sm group-hover:scale-110 transition-transform duration-200 ${product.sold ? "grayscale" : ""}`}
-												src={product.image}
-												alt={product.name}
-											/>
-										</div>
-										<div className='ml-4'>
-											<div className='text-sm font-semibold text-white group-hover:text-cyan-400 transition-colors'>{product.name}</div>
-										</div>
-									</Link>
-								</td>
-								<td className='px-6 py-4 whitespace-nowrap'>
-									<div className='text-sm font-medium text-emerald-400'>₹{product.price.toFixed(2)}</div>
-								</td>
-								<td className='px-6 py-4 whitespace-nowrap'>
-									<span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-										{product.category}
-									</span>
-								</td>
-								<td className='px-6 py-4 whitespace-nowrap'>
-									<div className="flex items-center gap-2">
-										<div className="flex-shrink-0 h-8 w-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
-											<span className="text-white font-bold text-xs">
-												{product.userId?.name?.charAt(0).toUpperCase() || "?"}
-											</span>
-										</div>
-										<span className="text-sm text-gray-300">{product.userId?.name || "Unknown"}</span>
-									</div>
-								</td>
-								<td className='px-6 py-4 whitespace-nowrap'>
-									<button
-										onClick={() => toggleFeaturedProduct(product._id)}
-										className={`p-2 rounded-lg transition-all duration-200 ${product.isFeatured
-											? "bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20"
-											: "bg-gray-700/50 text-gray-400 hover:bg-gray-700 hover:text-yellow-400"
-											}`}
-										title={product.isFeatured ? "Remove from Featured" : "Add to Featured"}
-									>
-										<Star className={`h-5 w-5 ${product.isFeatured ? "fill-yellow-400" : ""}`} />
-									</button>
-								</td>
-								<td className='px-6 py-4 whitespace-nowrap'>
-									<span
-										className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${product.sold
-												? "bg-red-500/20 text-red-400 border-red-500/30"
-												: "bg-green-500/20 text-green-400 border-green-500/30"
-											}`}
-										title="Only the product owner can change this status"
-									>
-										{product.sold ? "Sold" : "Available"}
-									</span>
-								</td>
-								<td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
-									<button
-										onClick={() => deleteProduct(product._id)}
-										className='text-red-400 hover:text-red-300 hover:bg-red-400/10 p-2 rounded-lg transition-colors duration-200'
-										title="Delete Product"
-									>
-										<Trash className='h-5 w-5' />
-									</button>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-				{products?.length === 0 && (
-					<div className="text-center py-12 text-gray-400">
-						<Package className="mx-auto h-12 w-12 text-gray-600 mb-3" />
-						<p>No products found.</p>
-					</div>
-				)}
-			</div>
-		</motion.div>
+                                {/* Featured Status */}
+                                <td className="px-4 py-2.5 border-y border-slate-100 dark:border-slate-800 text-center">
+                                    <button
+                                        onClick={() => toggleFeaturedProduct(product._id)}
+                                        className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all border flex items-center gap-1.5 mx-auto ${product.isFeatured 
+                                            ? "bg-amber-400 text-white border-amber-400 shadow-sm" 
+                                            : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400"}`}
+                                    >
+                                        <Star size={10} className={product.isFeatured ? "fill-current" : ""} />
+                                        {product.isFeatured ? "Yes" : "No"}
+                                    </button>
+                                </td>
+
+                                {/* Market Status */}
+                                <td className="px-4 py-2.5 border-y border-slate-100 dark:border-slate-800 text-center">
+                                     <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all border ${
+                                        product.sold 
+                                            ? "bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/20 text-red-500" 
+                                            : "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/20 text-emerald-600"
+                                     }`}>
+                                        <Activity size={10} className={product.sold ? "" : "animate-pulse"} />
+                                        {product.sold ? "SOLD" : "AVAILABLE"}
+                                     </div>
+                                </td>
+
+                                {/* Owner */}
+                                <td className="px-4 py-2.5 border-y border-slate-100 dark:border-slate-800">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <div className="w-5 h-5 rounded bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center text-[8px] font-black text-white shadow-sm">
+                                            {product.userId?.name?.charAt(0).toUpperCase() || "U"}
+                                        </div>
+                                        <p className="text-[9px] font-black text-slate-900 dark:text-white uppercase truncate max-w-[70px]">{product.userId?.name || "Anonymous"}</p>
+                                    </div>
+                                </td>
+
+                                {/* Actions */}
+                                <td className="px-4 py-2.5 rounded-r-2xl border-y border-r border-slate-100 dark:border-slate-800 text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                        <Link to={`/product/${product._id}`} className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/10 rounded-lg transition-all">
+                                            <ExternalLink size={14}/>
+                                        </Link>
+                                        <button onClick={() => deleteProduct(product._id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all">
+                                            <Trash size={14}/>
+                                        </button>
+                                    </div>
+                                </td>
+                            </motion.tr>
+                        ))}
+                    </tbody>
+                </table>
+
+                {!adminProducts?.length && (
+                    <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-sm w-full">
+                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl mb-3">
+                            <Package className="h-8 w-8 text-slate-300" />
+                        </div>
+                        <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Empty Directory</h3>
+                        <p className="text-slate-500 mt-1 font-medium text-[10px]">No academic assets found in global storage.</p>
+                    </div>
+                )}
+            </div>
+        </div>
 	);
 };
 export default GlobalProductsList;

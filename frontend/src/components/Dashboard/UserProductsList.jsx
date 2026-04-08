@@ -1,275 +1,147 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Trash, Package, RefreshCw, Check, X, Tag } from "lucide-react";
+import { motion } from "framer-motion";
+import { Trash, ExternalLink, BookMarked, IndianRupee, Layers, ShieldCheck, Box, Activity } from "lucide-react";
 import { useProductStore } from "../../stores/useProductStore";
 
 const UserProductsList = () => {
-  const { deleteProduct, products, fetchMyProducts, fetchProductOffers, acceptSwapOffer, rejectSwapOffer, toggleProductSoldStatus } = useProductStore();
-  const [selectedProductOffers, setSelectedProductOffers] = useState(null);
-  const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
-  const [currentProductId, setCurrentProductId] = useState(null);
+  const { deleteProduct, userProducts, fetchMyProducts, toggleProductSoldStatus } = useProductStore();
 
   useEffect(() => {
     fetchMyProducts();
   }, [fetchMyProducts]);
 
-  const handleViewOffers = async (productId) => {
-    setCurrentProductId(productId);
-    const offers = await fetchProductOffers(productId);
-    setSelectedProductOffers(offers);
-    setIsOffersModalOpen(true);
-  };
-
-  const handleAcceptOffer = async (offerId) => {
-    const success = await acceptSwapOffer(currentProductId, offerId);
-    if (success) {
-      // Refresh offers
-      const offers = await fetchProductOffers(currentProductId);
-      setSelectedProductOffers(offers);
-    }
-  };
-
-  const handleRejectOffer = async (offerId) => {
-    const success = await rejectSwapOffer(currentProductId, offerId);
-    if (success) {
-      // Refresh offers
-      const offers = await fetchProductOffers(currentProductId);
-      setSelectedProductOffers(offers);
-    }
-  };
-
-  const handleToggleSold = (productId) => {
-    toggleProductSoldStatus(productId);
-  };
-
   return (
-    <motion.div
-      className="bg-gray-800/60 backdrop-blur-md border border-gray-700/50 shadow-xl rounded-2xl overflow-hidden max-w-7xl mx-auto"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-    >
-      <div className="p-6 border-b border-gray-700/50 flex items-center gap-3">
-        <div className="p-2 bg-emerald-500/10 rounded-lg">
-          <Package className="w-6 h-6 text-emerald-400" />
+    <div className='w-full space-y-4'>
+        <div className="flex items-center gap-3 mb-2 px-1">
+            <div className="p-1.5 bg-primary-100 dark:bg-primary-900/20 rounded-lg text-primary-600">
+                <Box size={18} />
+            </div>
+            <div>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">My Books</h2>
+                <p className="text-slate-500 font-medium text-[10px] uppercase tracking-wider">Manage your items</p>
+            </div>
         </div>
-        <h2 className="text-xl font-bold text-white">My Products</h2>
-      </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700/50">
-          <thead className="bg-gray-800/50">
-            <tr>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                S.No.
-              </th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Product
-              </th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Serial Number
-              </th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Price
-              </th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Category
-              </th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-4 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
+      <div className="overflow-x-auto custom-scrollbar -mx-2 sm:-mx-0">
+        <table className="w-full text-left border-separate border-spacing-y-1.5 min-w-full">
+          <thead>
+            <tr className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
+              <th className="px-4 pb-2 w-[40%]">Book Details</th>
+              <th className="px-4 pb-2 text-center w-[15%]">Value</th>
+              <th className="px-4 pb-2 text-center w-[20%]">Category</th>
+              <th className="px-4 pb-2 text-center w-[15%]">Status</th>
+              <th className="px-4 pb-2 text-right w-[10%]">Controls</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-700/50 bg-transparent">
-            {products?.map((product, index) => (
-              <tr key={product._id} className={`hover:bg-gray-700/30 transition-colors duration-200 ${product.sold ? "opacity-75" : ""}`}>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-gray-400">{index + 1}</div>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <Link to={`/product/${product._id}`} className="flex items-center group cursor-pointer">
-                    <div className="flex-shrink-0 h-12 w-12 relative">
-                      <img
-                        className={`h-12 w-12 rounded-xl object-cover border border-gray-700 shadow-sm group-hover:scale-110 transition-transform duration-200 ${product.sold ? "grayscale" : ""}`}
-                        src={product.image}
-                        alt={product.name}
-                      />
+          <tbody className="bg-transparent">
+            {userProducts?.map((product, idx) => (
+              <motion.tr 
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.02 }}
+                key={product._id} 
+                className={`group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-all hover:border-primary-500/30 ${product.sold ? "opacity-60 grayscale-[0.5]" : ""}`}
+              >
+                {/* ID Column */}
+                <td className="px-4 py-2.5 rounded-l-2xl border-y border-l border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-shrink-0">
+                        <div className="w-8 h-8 rounded-lg overflow-hidden ring-1 ring-slate-100 dark:ring-slate-800">
+                            <img
+                                src={product.image}
+                                alt=""
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        {product.isFeatured && (
+                             <div className="absolute -top-1 -right-1 bg-amber-400 p-0.5 rounded shadow-sm">
+                                <ShieldCheck size={8} className="text-white fill-current" />
+                             </div>
+                        )}
                     </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-semibold text-white group-hover:text-cyan-400 transition-colors">{product.name}</div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-black text-slate-900 dark:text-white text-[11px] truncate tracking-tight uppercase leading-none">{product.name}</h4>
+                      <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-0.5 block truncate opacity-70">ID: {product.serialNumber || product._id.slice(-6).toUpperCase()}</span>
                     </div>
-                  </Link>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-xs font-mono text-gray-400 bg-gray-700/30 px-2 py-1 rounded">
-                    {product.serialNumber || "N/A"}
                   </div>
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-emerald-400">
-                    {product.price === 0 ? "Free" : `₹${product.price.toFixed(2)}`}
-                  </div>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="flex flex-col gap-1">
-                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 w-fit">
-                      {product.category}
+                
+                {/* Valuation Column */}
+                <td className="px-4 py-2.5 border-y border-slate-100 dark:border-slate-800 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <IndianRupee size={10} className="text-emerald-500" />
+                    <span className={`font-black text-xs tracking-tight ${product.price === 0 ? "text-emerald-600" : "text-slate-900 dark:text-white"}`}>
+                        {product.price === 0 ? "FREE" : product.price.toLocaleString()}
                     </span>
-                    {product.isBookSwap && (
-                      <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 w-fit">
-                        Book Swap
-                      </span>
-                    )}
                   </div>
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <button
-                    onClick={() => handleToggleSold(product._id)}
-                    className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border cursor-pointer transition-all duration-200 hover:scale-105 ${product.sold
-                        ? "bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30"
-                        : "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
-                      }`}
+
+                {/* Classification Column */}
+                <td className="px-4 py-2.5 border-y border-slate-100 dark:border-slate-800 whitespace-nowrap text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Layers size={9} className="text-primary-500" />
+                    <span className="text-[8px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">
+                      {product.category.replace(/-/g, ' ')}
+                    </span>
+                  </div>
+                </td>
+
+                {/* Status Column */}
+                <td className="px-4 py-2.5 border-y border-slate-100 dark:border-slate-800 text-center">
+                   <button
+                    onClick={() => toggleProductSoldStatus(product._id)}
+                    className={`text-[8px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest transition-all border flex items-center gap-1.5 mx-auto ${
+                        product.sold 
+                        ? "bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/20 text-red-500" 
+                        : "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/20 text-emerald-600 shadow-sm"
+                    }`}
                   >
-                    {product.sold ? "Sold" : "Available"}
+                    <Activity size={9} className={product.sold ? "hidden" : "animate-pulse"} />
+                    {product.sold ? "SOLD" : "AVAILABLE"}
                   </button>
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex items-center justify-end gap-2">
-                    {product.isBookSwap && !product.sold && (
-                      <button
-                        onClick={() => handleViewOffers(product._id)}
-                        className="text-purple-400 hover:text-purple-300 hover:bg-purple-400/10 p-2 rounded-lg transition-colors duration-200 relative"
-                        title="View Offers"
-                      >
-                        <RefreshCw className="h-5 w-5" />
-                        {product.pendingOffersCount > 0 && (
-                          <span className='absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse'>
-                            {product.pendingOffersCount}
-                          </span>
-                        )}
-                      </button>
-                    )}
-                    <button
-                      onClick={() => deleteProduct(product._id)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-400/10 p-2 rounded-lg transition-colors duration-200"
-                      title="Delete Product"
+
+                {/* Controls Column */}
+                <td className="px-4 py-2.5 rounded-r-2xl border-y border-r border-slate-100 dark:border-slate-800 text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <Link 
+                        to={`/product/${product._id}`} 
+                        className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/10 rounded-lg transition-all"
                     >
-                      <Trash className="h-5 w-5" />
+                        <ExternalLink size={14}/>
+                    </Link>
+                    <button 
+                        onClick={() => deleteProduct(product._id)} 
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
+                    >
+                        <Trash size={14}/>
                     </button>
                   </div>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
-        {products?.length === 0 && (
-          <div className="text-center py-12 text-gray-400">
-            <Package className="mx-auto h-12 w-12 text-gray-600 mb-3" />
-            <p>No products found. Start selling today!</p>
-          </div>
-        )}
-      </div>
 
-      {/* Offers Modal */}
-      <AnimatePresence>
-        {isOffersModalOpen && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        {!userProducts?.length && (
+          <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-sm"
           >
-            <motion.div
-              className="bg-gray-800 rounded-xl p-6 w-full max-w-2xl shadow-xl border border-gray-700 max-h-[80vh] overflow-y-auto"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-white">Swap Offers</h3>
-                <button
-                  onClick={() => setIsOffersModalOpen(false)}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-
-              {selectedProductOffers?.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedProductOffers.map((offer) => (
-                    <div
-                      key={offer._id}
-                      className="bg-gray-700/50 rounded-lg p-4 border border-gray-600 flex flex-col sm:flex-row gap-4 items-center justify-between"
-                    >
-                      <div className="flex items-center gap-4 flex-1">
-                        {offer.offeredProductId ? (
-                          <>
-                            <Link to={`/product/${offer.offeredProductId._id}`} className="shrink-0">
-                              <img
-                                src={offer.offeredProductId.image}
-                                alt={offer.offeredProductId.name}
-                                className="w-16 h-16 object-cover rounded-md hover:opacity-80 transition-opacity"
-                              />
-                            </Link>
-                            <div>
-                              <Link to={`/product/${offer.offeredProductId._id}`}>
-                                <h4 className="font-semibold text-white hover:text-cyan-400 transition-colors">
-                                  {offer.offeredProductId.name}
-                                </h4>
-                              </Link>
-                              <p className="text-sm text-gray-400">
-                                Offered by: <span className="text-gray-300">{offer.userId?.name || "Unknown User"}</span>
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Status: <span className={`font-medium ${offer.status === 'accepted' ? 'text-green-400' :
-                                  offer.status === 'rejected' ? 'text-red-400' : 'text-yellow-400'
-                                  }`}>{offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}</span>
-                              </p>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-gray-400 italic">
-                            Product unavailable (deleted)
-                          </div>
-                        )}
-                      </div>
-
-                      {offer.status === 'pending' && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleAcceptOffer(offer._id)}
-                            className="p-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
-                            title="Accept Offer"
-                          >
-                            <Check size={20} />
-                          </button>
-                          <button
-                            onClick={() => handleRejectOffer(offer._id)}
-                            className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
-                            title="Reject Offer"
-                          >
-                            <X size={20} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  No offers received yet.
-                </div>
-              )}
-            </motion.div>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl mb-3">
+              <BookMarked size={32} className="text-slate-300" />
+            </div>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight text-center">Empty Inventory</h3>
+            <p className="text-slate-500 mt-1 font-medium text-[10px] text-center">List your academic books or notes here.</p>
+            <Link to="/dashboard?tab=create" className="mt-6 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-xl shadow-primary-500/10 hover:scale-105 transition-all">
+                List Asset
+            </Link>
           </motion.div>
         )}
-      </AnimatePresence>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 

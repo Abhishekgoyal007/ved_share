@@ -3,9 +3,8 @@ import { useUserStore } from "../stores/useUserStore";
 import { useState, useEffect } from "react";
 import axios from "../lib/axios";
 import toast from "react-hot-toast";
-import { Send, Linkedin, BookOpen, Heart } from "lucide-react";
+import { Send, Linkedin, BookOpen, Heart, Github, Twitter } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
 
 const Footer = () => {
   const { user } = useUserStore();
@@ -24,9 +23,10 @@ const Footer = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTextIndex((prev) => (prev + 1) % rotatingTexts.length);
-    }, 3000);
+    }, 4000);
     return () => clearInterval(interval);
   }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!message.trim()) {
@@ -36,137 +36,122 @@ const Footer = () => {
     setSubmitting(true);
     try {
       await axios.post("/feedback", { type, message });
-      toast.success("Message sent!");
+      toast.success("Message sent successfully!");
       setMessage("");
       setType("feedback");
     } catch (error) {
-      toast.error("Failed to send Message.");
+      toast.error("Failed to send message.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <footer className="bg-gradient-to-b from-gray-900 to-black text-gray-300 border-t border-gray-800/50 py-16 font-sans">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
-
-          {/* Section 1: Brand & Info */}
+    <footer className="bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-24 mb-20">
+          
+          {/* Brand Identity */}
           <div className="md:col-span-4 space-y-6">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent flex items-center gap-2">
-              VedShare <BookOpen size={24} className="text-cyan-400" />
-            </h2>
-            <p className="text-gray-400 leading-relaxed">
-              Buy, Sell & Learn — all in one platform. <br />
-              Empowering students to share knowledge and resources efficiently.
+            <Link to="/" className="flex items-center gap-2 group">
+                <img src="/logo.png" alt="" className="h-12 w-12 object-contain" />
+              <span className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">VedShare</span>
+            </Link>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">
+              The premier marketplace for academic resources. We connect students across the globe to make learning materials more accessible and sustainable.
             </p>
-            <p className="text-sm text-gray-500">
-              <span className="flex items-center gap-1">Built with <Heart size={14} className="text-red-500 fill-red-500" /> by students, for students.</span>
-            </p>
+            <div className="flex items-center gap-4">
+              <a href="#" className="p-2 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"><Github size={20}/></a>
+              <a href="#" className="p-2 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"><Twitter size={20}/></a>
+              <a href="#" className="p-2 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"><Linkedin size={20}/></a>
+            </div>
           </div>
 
-          {/* Section 2: Links */}
-          <div className="md:col-span-3 md:col-start-6">
-            <h3 className="text-white font-semibold text-lg mb-6">Platform</h3>
-            <ul className="space-y-3">
-              <li><Link to="/" className="hover:text-cyan-400 transition-colors duration-300 flex items-center gap-2">Home</Link></li>
-              <li><Link to="/dashboard" className="hover:text-cyan-400 transition-colors duration-300 flex items-center gap-2">Dashboard</Link></li>
-              <li><Link to="/learning-desk" className="hover:text-cyan-400 transition-colors duration-300 flex items-center gap-2">Learning Desk</Link></li>
-              <li><Link to="/about" className="hover:text-cyan-400 transition-colors duration-300 flex items-center gap-2">About Us</Link></li>
+          {/* Quick Links */}
+          <div className="md:col-span-2">
+            <h3 className="text-slate-900 dark:text-white font-bold text-sm uppercase tracking-widest mb-6">Platform</h3>
+            <ul className="space-y-4 text-sm font-medium">
+              <li><Link to="/" className="text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 transition-colors">Marketplace</Link></li>
+              <li><Link to="/learning-desk" className="text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 transition-colors">Learning Desk</Link></li>
+              <li><Link to="/about" className="text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 transition-colors">Our Mission</Link></li>
             </ul>
           </div>
 
-          {/* Section 3: Creators */}
           <div className="md:col-span-3">
-            <h3 className="text-white font-semibold text-lg mb-6">Connect with Creators</h3>
-            <div className="space-y-4">
-              <a href="https://www.linkedin.com/in/creator1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group">
-                <div className="p-2 bg-gray-800 rounded-full group-hover:bg-cyan-500/20 transition-colors">
-                  <Linkedin size={18} className="text-gray-400 group-hover:text-cyan-400 transition-colors" />
-                </div>
-                <span className="group-hover:text-white transition-colors">Krish Jain</span>
-              </a>
-              <a href="https://www.linkedin.com/in/creator2" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group">
-                <div className="p-2 bg-gray-800 rounded-full group-hover:bg-cyan-500/20 transition-colors">
-                  <Linkedin size={18} className="text-gray-400 group-hover:text-cyan-400 transition-colors" />
-                </div>
-                <span className="group-hover:text-white transition-colors">Niharika Ravi Kumar</span>
-              </a>
-              <a href="https://www.linkedin.com/in/creator3" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group">
-                <div className="p-2 bg-gray-800 rounded-full group-hover:bg-cyan-500/20 transition-colors">
-                  <Linkedin size={18} className="text-gray-400 group-hover:text-cyan-400 transition-colors" />
-                </div>
-                <span className="group-hover:text-white transition-colors">Abhishek Goyal</span>
-              </a>
+            <h3 className="text-slate-900 dark:text-white font-bold text-sm uppercase tracking-widest mb-6">Development</h3>
+            <div className="space-y-4 text-sm font-medium">
+                <a href="https://linkedin.com/in/creator3" target="_blank" className="flex items-center gap-2 text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700" /> Krish Jain
+                </a>
+                <a href="https://linkedin.com/in/creator3" target="_blank" className="flex items-center gap-2 text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700" /> Niharika Ravi Kumar
+                </a>
+                <a href="https://linkedin.com/in/creator3" target="_blank" className="flex items-center gap-2 text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700" /> Abhishek Goyal
+                </a>
             </div>
           </div>
-        </div>
 
-        {/* Feedback Form */}
-        {user && (
-          <div className="border-t border-gray-800/50 pt-12">
-            <div className="max-w-2xl mx-auto">
-              <div className="text-center mb-8">
-                <h3 className="text-xl font-semibold text-white mb-2">We value your feedback</h3>
-                <div className="h-6 relative overflow-hidden">
+          {/* Support/Contact */}
+          <div className="md:col-span-3">
+            <h3 className="text-slate-900 dark:text-white font-bold text-sm uppercase tracking-widest mb-6">Feedback</h3>
+            {user ? (
+               <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="flex gap-2">
+                  <select 
+                    value={type} 
+                    onChange={(e) => setType(e.target.value)}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2 py-2 text-[10px] font-bold uppercase outline-none focus:ring-2 focus:ring-primary-500/20"
+                  >
+                    <option value="feedback">Feed</option>
+                    <option value="bug">Bug</option>
+                    <option value="feature">Idea</option>
+                  </select>
+                  <input 
+                    type="text" 
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Mind sharing a thought?"
+                    className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary-500/20 dark:text-white"
+                  />
+                  <button 
+                    disabled={submitting || !message.trim()}
+                    className="p-2 bg-primary-600 text-white rounded-xl hover:bg-primary-500 disabled:opacity-50 transition-colors"
+                  >
+                    <Send size={16}/>
+                  </button>
+                </div>
+                <div className="h-4 overflow-hidden">
                   <AnimatePresence mode="wait">
                     <motion.p
                       key={rotatingTexts[currentTextIndex]}
-                      initial={{ y: 20, opacity: 0 }}
+                      initial={{ y: 10, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -20, opacity: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="absolute w-full text-sm text-cyan-400"
+                      exit={{ y: -10, opacity: 0 }}
+                      className="text-[10px] text-slate-400 font-bold uppercase tracking-tight"
                     >
                       {rotatingTexts[currentTextIndex]}
                     </motion.p>
                   </AnimatePresence>
                 </div>
-              </div>
-
-              <form
-                onSubmit={handleSubmit}
-                className="relative group"
-              >
-                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                <div className="relative flex items-center bg-gray-900/90 backdrop-blur-xl border border-gray-700/50 rounded-lg p-1 focus-within:border-cyan-500/50 transition-colors">
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    className="bg-transparent text-gray-300 text-sm px-4 py-3 border-r border-gray-700/50 outline-none cursor-pointer hover:text-white transition-colors"
-                  >
-                    <option value="feedback" className="bg-gray-900">Feedback</option>
-                    <option value="bug" className="bg-gray-900">Bug Report</option>
-                    <option value="feature" className="bg-gray-900">Feature Request</option>
-                  </select>
-
-                  <input
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Share your thoughts..."
-                    className="flex-1 bg-transparent text-white text-sm px-4 py-3 focus:outline-none placeholder-gray-500"
-                  />
-
-                  <button
-                    type="submit"
-                    disabled={submitting || !message.trim()}
-                    className="px-6 py-2 m-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    <span>Send</span>
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-              </form>
-            </div>
+               </form>
+            ) : (
+              <p className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-900 p-4 rounded-xl font-medium">
+                Log in to provide feedback and help us improve.
+              </p>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Copyright */}
-        <div className="mt-16 pt-8 border-t border-gray-800/50 text-center">
-          <p className="text-sm text-gray-600">
-            © {new Date().getFullYear()} VedShare. All rights reserved.
-          </p>
+        {/* Legal & Copyright */}
+        <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest group">
+            Made with <Heart size={14} className="text-red-500 group-hover:scale-125 transition-transform" /> for Students
+          </div>
+          <div className="flex gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+            <a href="#" className="hover:text-primary-600 transition-colors">Privacy</a>
+            <a href="#" className="hover:text-primary-600 transition-colors">Terms</a>
+          </div>
         </div>
       </div>
     </footer>

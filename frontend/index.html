@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/vs_logo.png" />
@@ -12,7 +12,7 @@
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#06b6d4" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="VedShare" />
     <link rel="apple-touch-icon" href="/vs_logo.png" />
@@ -26,19 +26,5 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     
-    <!-- Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('VedShare SW registered:', registration.scope);
-            })
-            .catch((error) => {
-              console.log('VedShare SW registration failed:', error);
-            });
-        });
-      }
-    </script>
   </body>
 </html>

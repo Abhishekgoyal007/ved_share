@@ -11,9 +11,16 @@ const CartPage = () => {
 	const { cart } = useCartStore();
 
 	return (
-		<div className='py-8 md:py-16'>
-			<div className='mx-auto max-w-screen-xl px-4 2xl:px-0'>
-				<div className='mt-6 sm:mt-8 md:gap-6 lg:flex lg:items-start xl:gap-8'>
+		<div className='py-12 md:py-24 bg-slate-50 dark:bg-slate-950 min-h-screen'>
+			<div className='mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8'>
+                <div className="mb-16">
+                    <h1 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">
+                        My <span className="text-primary-600">Collection</span>
+                    </h1>
+                    <p className="text-slate-500 font-medium text-sm">Review your selected academic resources before authentication.</p>
+                </div>
+
+				<div className='md:gap-12 lg:flex lg:items-start'>
 					<motion.div
 						className='mx-auto w-full flex-none lg:max-w-2xl xl:max-w-4xl'
 						initial={{ opacity: 0, x: -20 }}
