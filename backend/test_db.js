@@ -15,7 +15,10 @@ const OrderSchema = new mongoose.Schema({
 });
 const Order = mongoose.model('Order', OrderSchema);
 
-mongoose.connect("mongodb+srv://krish:vedshare@cluster0.hqnrksq.mongodb.net/vedshare-db?retryWrites=true&w=majority&appName=Cluster0").then(async () => {
+import dotenv from 'dotenv';
+dotenv.config();
+
+mongoose.connect(process.env.MONGO_URI).then(async () => {
     const count = await Order.countDocuments();
     console.log('Total Orders:', count);
     const sales = await Order.aggregate([{ $unwind: '$products' }, { $group: { _id: null, totalSales: { $sum: '$products.quantity' } } }]);
